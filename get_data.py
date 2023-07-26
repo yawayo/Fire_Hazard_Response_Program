@@ -100,8 +100,6 @@ class db_thread(QThread):
             for _ in range(self.sensor_stack):
                 all_temp_datas.append([time.time()] + self.list_chunk([result[1][i] for i in temp_index], 4))
                 all_gas_datas.append([time.time()] + self.list_chunk([result[1][i] for i in gas_index], 4))
-                # all_temp_datas.append([datetime.now().strftime('%Y/%m/%d %H:%M:%S')] + self.list_chunk([result[1][i] for i in temp_index], 4))
-                # all_gas_datas.append([datetime.now().strftime('%Y/%m/%d %H:%M:%S')] + self.list_chunk([result[1][i] for i in gas_index], 4))
 
             for data in result[1:]:
                 if self.working:
@@ -109,8 +107,6 @@ class db_thread(QThread):
                     all_gas_datas.pop(0)
                     all_temp_datas.append([time.time()] + self.list_chunk([data[i] for i in temp_index], 4))
                     all_gas_datas.append([time.time()] + self.list_chunk([data[i] for i in gas_index], 4))
-                    # all_temp_datas.append([datetime.now().strftime('%Y/%m/%d %H:%M:%S')] + self.list_chunk([data[i] for i in temp_index], 4))
-                    # all_gas_datas.append([datetime.now().strftime('%Y/%m/%d %H:%M:%S')] + self.list_chunk([data[i] for i in gas_index], 4))
                     self.data_sig.emit(all_temp_datas, all_gas_datas)
                     time.sleep(self.speed / 1)
                 else:
@@ -149,11 +145,13 @@ class get_data:
 
     def resizeWidget(self):
         self.bg.resizeWidget(self.ui.openGLWidget.geometry())
-        self.ui.system_log_table.setGeometry(QRect((self.ui.log_tabWidget.geometry().width() / 3.0) * 0.0, 0, self.ui.log_tabWidget.geometry().width() / 3.0, self.ui.log_tabWidget.geometry().height()))
-        self.ui.analysis_log_table.setGeometry(QRect((self.ui.log_tabWidget.geometry().width() / 3.0) * 1.0, 0, self.ui.log_tabWidget.geometry().width() / 3.0, self.ui.log_tabWidget.geometry().height()))
-        self.ui.react_log_table.setGeometry(QRect((self.ui.log_tabWidget.geometry().width() / 3.0) * 2.0, 0, self.ui.log_tabWidget.geometry().width() / 3.0, self.ui.log_tabWidget.geometry().height()))
-        self.ui.temp_data_log_table.setGeometry(QRect(0, 0, self.ui.log_tabWidget.geometry().width(), self.ui.log_tabWidget.geometry().height()))
-        self.ui.gas_data_log_table.setGeometry(QRect(0, 0, self.ui.log_tabWidget.geometry().width(), self.ui.log_tabWidget.geometry().height()))
+        width = self.ui.log_tabWidget.geometry().width() - 6
+        height = self.ui.log_tabWidget.geometry().height() - 25
+        self.ui.system_log_table.setGeometry(QRect((width / 3.0) * 0.0, 0, width / 3.0 - 1, height))
+        self.ui.analysis_log_table.setGeometry(QRect((width / 3.0) * 1.0, 0, width / 3.0 - 1, height))
+        self.ui.react_log_table.setGeometry(QRect((width / 3.0) * 2.0, 0, width / 3.0 - 1, height))
+        self.ui.temp_data_log_table.setGeometry(QRect(0, 0, width, height))
+        self.ui.gas_data_log_table.setGeometry(QRect(0, 0, width, height))
 
     def event_init(self):
         self.db_worker.data_sig.connect(self.data_analy)
@@ -187,9 +185,10 @@ class get_data:
     def data_analy(self, temp_datas, gas_datas):
         self.pd.data_plot(temp_datas, gas_datas)
         self.bg.eva_draw.Fire = self.ad.check_danger(temp_datas, gas_datas)
-        # self.bg.data = self.wc.danger_check(temp_datas, gas_datas)
 
         if self.bg.eva_draw.Fire:
+            print(self.ad.temp_Fire_idx)
+
             start_node = 'room10'
             if self.bg.eva_draw.Start_floor != 0:
                 start_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
@@ -200,6 +199,10 @@ class get_data:
             for point in self.bg.eva_draw.path_route:
                 path_output += point + ' -> '
             self.react_log(path_output[:-3])
+
+            """
+            spread of fire code here
+            """
 
         else:
             self.bg.Fire = False

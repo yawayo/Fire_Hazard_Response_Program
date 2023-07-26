@@ -20,7 +20,7 @@ model.eval()
 RP = RecurrencePlot()
 
 class classification_thread(QThread):
-    output_sig = pyqtSignal(object)
+    output_sig = pyqtSignal(object, object)
 
     def __init__(self):
         super().__init__( )
@@ -35,27 +35,48 @@ class classification_thread(QThread):
         self.output = []
 
     def run(self):
-        danger_idx = []
+        total_temp_data = []
+        total_gas_data = []
 
-        total_data = []
         for datas in self.temp_datas:
             datas = datas[1:]
-
             frame_data = []
             for data in datas:
                 frame_data += data
-            total_data.append(frame_data)
-        total_datas_reshaped = [total_data[idx] for idx in range(len(total_data))]
-        total_datas_reshaped = list(zip(*total_datas_reshaped))
-        for idx, input_datas_str in enumerate(total_datas_reshaped):
+            total_temp_data.append(frame_data)
+        for datas in self.gas_datas:
+            datas = datas[1:]
+            frame_data = []
+            for data in datas:
+                frame_data += data
+            total_gas_data.append(frame_data)
+
+
+        temp_danger_idx = []
+        gas_danger_idx = []
+
+        for idx, value in enumerate(total_temp_data[-1]):
+            if float(value) >= 25.0:
+                if not(idx in temp_danger_idx):
+                    temp_danger_idx.append(idx)
+        for idx, value in enumerate(total_gas_data[-1]):
+            if float(value) >= 0.02:
+                if not(idx in gas_danger_idx):
+                    gas_danger_idx.append(idx)
+
+        total_temp_datas_reshaped = [total_temp_data[idx] for idx in range(len(total_temp_data))]
+        total_temp_datas_reshaped = list(zip(*total_temp_datas_reshaped))
+
+        for idx, input_datas_str in enumerate(total_temp_datas_reshaped):
             input_datas_float = [float(value) for value in input_datas_str]
             input_data = (torch.tensor(self.rp.fit_transform(np.array([input_datas_float]))).unsqueeze(dim=0)).to(device, dtype=torch.float)
             output = model(input_data)
             pred = output.argmax(dim=1, keepdim=True)
             if pred == 1:
-                danger_idx.append(idx)
+                if not(idx in temp_danger_idx):
+                    temp_danger_idx.append(idx)
 
-        self.output_sig.emit(danger_idx)
+        self.output_sig.emit(temp_danger_idx, gas_danger_idx)
 
 class analy_data:
     def __init__(self, ui):
@@ -65,23 +86,29 @@ class analy_data:
         self.warning_count = 0
         self.fire_count = 0
         self.Fire_status = False
-        self.Fire_idx = []
+        self.temp_Fire_idx = []
+        self.gas_Fire_idx = []
         self.init_value()
 
     def init_value(self):
         self.warning_count = 0
         self.fire_count = 0
         self.Fire_status = False
-        self.Fire_idx = []
+        self.temp_Fire_idx = []
+        self.gas_Fire_idx = []
         self.classification_worker = classification_thread()
         self.classification_worker.output_sig.connect(self.data_analy)
 
-    def data_analy(self, output):
-        self.Fire_idx = output
-        if len(self.Fire_idx) == 0:
+    def data_analy(self, temp_output, gas_output):
+        self.temp_Fire_idx = temp_output
+        self.gas_Fire_idx = gas_output
+        if (len(self.temp_Fire_idx) == 0) and (len(self.gas_Fire_idx) == 0):
             self.analysis_log("End DL : None")
         else:
-            self.analysis_log("End DL : " + str(self.Fire_idx))
+            if len(self.temp_Fire_idx) != 0:
+                self.analysis_log("End DL(temp) : " + str(self.temp_Fire_idx))
+            if len(self.gas_Fire_idx) != 0:
+                self.analysis_log("End DL(gas) : " + str(self.gas_Fire_idx))
 
     def check_danger(self, temp_datas, gas_datas):
 
@@ -96,23 +123,10 @@ class analy_data:
             self.analysis_log("Start DL")
 
         danger = False
-
-        if len(self.Fire_idx) != 0:
-            self.Fire_status = True
+        if len(self.temp_Fire_idx) != 0:
             danger = True
-
-        for data in temp_datas:
-            for floor_data in data[1:]:
-                for value in floor_data:
-                    if float(value) >= 25.0:
-                        self.Fire_status = True
-                        danger = True
-        for data in gas_datas:
-            for floor_data in data[1:]:
-                for value in floor_data:
-                    if float(value) >= 0.02:
-                        self.Fire_status = True
-                        danger = True
+        if len(self.gas_Fire_idx) != 0:
+            danger = True
 
         self.Fire_status = danger
         return self.Fire_status
