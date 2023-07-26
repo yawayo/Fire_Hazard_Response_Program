@@ -1,5 +1,5 @@
 from get_data import get_data
-from PyQt5.QtCore import QTimer, QTime, QRect
+from PyQt5.QtCore import QTimer, QTime
 from PyQt5.QtWidgets import QLineEdit, QHeaderView
 from PyQt5.QtGui import QIntValidator
 

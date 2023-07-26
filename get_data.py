@@ -6,7 +6,6 @@ from node_weight        import weight_checker
 from GL.build_gl        import build_gl
 import time
 from datetime import datetime
-import pyautogui
 import pymysql
 
 class db_thread(QThread):

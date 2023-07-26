@@ -2,8 +2,6 @@ import pyqtgraph as pg
 import time
 import numpy as np
 from datetime import datetime
-from PyQt5.QtGui    import QFont
-from PyQt5.QtCore import QRect
 
 class plot_data:
     def __init__(self, ui):

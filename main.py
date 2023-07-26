@@ -2,7 +2,6 @@ import sys
 from PyQt5.QtWidgets    import *
 from PyQt5.uic          import loadUi
 from PyQt5.QtGui        import QIcon
-from PyQt5.QtCore           import QRect
 from func_set           import func_set
 
 class MainWindow(QMainWindow):

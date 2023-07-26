@@ -1,9 +1,6 @@
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QTableWidgetItem
 import numpy as np
-import matplotlib.pyplot as plt
-import os, io
-import time
 from datetime import datetime
 import torch
 import torch.nn as nn
