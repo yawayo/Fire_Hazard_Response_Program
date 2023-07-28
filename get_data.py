@@ -16,6 +16,8 @@ class db_thread(QThread):
     def __init__(self):
         super().__init__()
 
+        self.floor_idx_list = []
+
         self.IP = None
         self.Port = None
         self.ID = None
@@ -34,7 +36,12 @@ class db_thread(QThread):
         self.var_init()
 
     def var_init(self):
-        a = 0
+        idx_1F = [i for i in range(1, 12)]
+        idx_2F = [i for i in range(12, 58)]
+        idx_3F = [i for i in range(58, 107)]
+        idx_4F = [i for i in range(107, 155)]
+        idx_5F = [i for i in range(155, 205)]
+        self.floor_idx_list = [idx_1F, idx_2F, idx_3F, idx_4F, idx_5F]
 
     def connect_DB(self):
         if not self.connection:
@@ -76,37 +83,46 @@ class db_thread(QThread):
             except Exception as err:
                 print(err)
 
-    def list_chunk(self, lst, n):
-        return [lst[i:i + int(len(lst) / 4)] for i in range(0, len(lst), int(len(lst) / 4))]
+    def list_split_per_floor(self, data, all_index, split_idx):
+        output = []
+        for _ in range(len(split_idx)):
+            output.append([])
+        for floor, idx_list in enumerate(split_idx):
+            for idx in all_index:
+                if idx in idx_list:
+                    output[floor].append(data[idx])
+
+        return output
 
     def run(self):
         self.connect_DB()
         if self.connection:
-            sql = "SELECT * FROM data_full;"
+
+            sql = "SELECT * FROM data_all;"
 
             self.cur.execute(sql)
             result = self.cur.fetchall()
             temp_index = []
             gas_index = []
             for idx, type in enumerate(result[0]):
-                if type == 'Sensor Temperature':
+                if type == 'temp':
                     temp_index.append(idx)
-                if type == 'Sensor Obscuration':
+                if type == 'gas':
                     gas_index.append(idx)
 
             all_temp_datas = []
             all_gas_datas = []
 
             for _ in range(self.sensor_stack):
-                all_temp_datas.append([time.time()] + self.list_chunk([result[1][i] for i in temp_index], 4))
-                all_gas_datas.append([time.time()] + self.list_chunk([result[1][i] for i in gas_index], 4))
+                all_temp_datas.append([time.time()] + self.list_split_per_floor(result[1], temp_index, self.floor_idx_list))
+                all_gas_datas.append([time.time()] + self.list_split_per_floor(result[1], gas_index, self.floor_idx_list))
 
             for data in result[1:]:
                 if self.working:
                     all_temp_datas.pop(0)
                     all_gas_datas.pop(0)
-                    all_temp_datas.append([time.time()] + self.list_chunk([data[i] for i in temp_index], 4))
-                    all_gas_datas.append([time.time()] + self.list_chunk([data[i] for i in gas_index], 4))
+                    all_temp_datas.append([time.time()] + self.list_split_per_floor(data, temp_index, self.floor_idx_list))
+                    all_gas_datas.append([time.time()] + self.list_split_per_floor(data, gas_index, self.floor_idx_list))
                     self.data_sig.emit(all_temp_datas, all_gas_datas)
                     time.sleep(self.speed / 1)
                 else:
@@ -184,10 +200,10 @@ class get_data:
 
     def data_analy(self, temp_datas, gas_datas):
         self.pd.data_plot(temp_datas, gas_datas)
-        self.bg.eva_draw.Fire = self.ad.check_danger(temp_datas, gas_datas)
+        self.bg.eva_draw.Fire, temp_idx, gas_idx = self.ad.check_danger(temp_datas, gas_datas)
 
         if self.bg.eva_draw.Fire:
-            print(self.ad.temp_Fire_idx)
+            print(self.ad.temp_Fire_idx, self.ad.gas_Fire_idx)
 
             start_node = 'room10'
             if self.bg.eva_draw.Start_floor != 0:

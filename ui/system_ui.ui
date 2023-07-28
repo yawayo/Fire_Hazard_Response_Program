@@ -501,7 +501,7 @@
                </spacer>
               </item>
               <item>
-               <widget class="QComboBox" name="floor_comboBox">
+               <widget class="QComboBox" name="sensor_floor_comboBox">
                 <property name="font">
                  <font>
                   <family>KoPubWorld돋움체 Medium</family>
@@ -518,6 +518,11 @@
                 <property name="currentIndex">
                  <number>0</number>
                 </property>
+                <item>
+                 <property name="text">
+                  <string>1F</string>
+                 </property>
+                </item>
                 <item>
                  <property name="text">
                   <string>2F</string>

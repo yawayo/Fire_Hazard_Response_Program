@@ -35,8 +35,8 @@ class plot_data:
         self.ui.gas_floor_graph.setLimits(yMin=0)
         self.ui.temp_floor_graph.showGrid(x=False, y=True)
         self.ui.gas_floor_graph.showGrid(x=False, y=True)
-        self.ui.temp_floor_graph.setRange(xRange=(0, 29), disableAutoRange=True, padding=0)
-        self.ui.gas_floor_graph.setRange(xRange=(0, 21), disableAutoRange=True, padding=0)
+        # self.ui.temp_floor_graph.setRange(xRange=(0, 29), disableAutoRange=True, padding=0)
+        # self.ui.gas_floor_graph.setRange(xRange=(0, 21), disableAutoRange=True, padding=0)
 
         temp_floor_graph_axis = self.ui.temp_floor_graph.getAxis('bottom')
         gas_floor_graph_axis = self.ui.gas_floor_graph.getAxis('bottom')
@@ -56,9 +56,9 @@ class plot_data:
         self.ui.temp_sensor_graph.setMouseEnabled(x=False, y=False)                                         # mouse grab disable
         self.ui.gas_sensor_graph.setMouseEnabled(x=False, y=False)                                         # mouse grab disable
         self.ui.temp_sensor_graph.setBackground('w')                                                        # 배경 색 변경
-        self.ui.gas_sensor_graph.setBackground('w')                                                        # 배경 색 변경
-        self.ui.temp_sensor_graph.setTitle(self.ui.floor_comboBox.currentText() + ' - ' + self.ui.temp_sensor_combobox.currentText() + ' T_Sensor')
-        self.ui.gas_sensor_graph.setTitle(self.ui.floor_comboBox.currentText() + ' - ' + self.ui.gas_sensor_combobox.currentText() + ' G_Sensor')
+        self.ui.gas_sensor_graph.setBackground('w')                                                     # 배경 색 변경
+        self.ui.temp_sensor_graph.setTitle(self.ui.sensor_floor_comboBox.currentText() + ' - ' + self.ui.temp_sensor_combobox.currentText() + ' T_Sensor')
+        self.ui.gas_sensor_graph.setTitle(self.ui.sensor_floor_comboBox.currentText() + ' - ' + self.ui.gas_sensor_combobox.currentText() + ' G_Sensor')
         self.ui.temp_sensor_graph.getAxis('left').setStyle(autoExpandTextSpace=False, textFillLimits=[(0, 0.7)])
         self.ui.gas_sensor_graph.getAxis('left').setStyle(autoExpandTextSpace=False)
         self.ui.temp_sensor_graph.getAxis('left').setLabel('Temperature', units='°C')
@@ -72,12 +72,23 @@ class plot_data:
         #     self.ui.gr_01.setXRange(int(time.time()), int(time.time()) + 60)
         #     self.ui.gr_02.setXRange(int(time.time()), int(time.time()) + 60)
 
-        self.ui.temp_sensor_graph.setTitle(self.ui.floor_comboBox.currentText() + ' - ' + self.ui.temp_sensor_combobox.currentText() + ' T_Sensor')
-        self.ui.gas_sensor_graph.setTitle(self.ui.floor_comboBox.currentText() + ' - ' + self.ui.gas_sensor_combobox.currentText() + ' G_Sensor')
+        self.ui.temp_sensor_graph.setTitle(self.ui.sensor_floor_comboBox.currentText() + ' - ' + self.ui.temp_sensor_combobox.currentText() + ' T_Sensor')
+        self.ui.gas_sensor_graph.setTitle(self.ui.sensor_floor_comboBox.currentText() + ' - ' + self.ui.gas_sensor_combobox.currentText() + ' G_Sensor')
+
+        self.ui.temp_floor_graph.setTitle('Temperature (%s)' % datetime.now().strftime('%Y/%m/%d %H:%M:%S'))
+        self.ui.gas_floor_graph.setTitle('Gas (%s)' % datetime.now().strftime('%Y/%m/%d %H:%M:%S'))
+        self.ui.temp_floor_graph.clear()
+        self.ui.gas_floor_graph.clear()
+        self.ui.temp_floor_graph.setRange(xRange=(0, len(temp_datas[-1][1:][self.ui.sensor_floor_comboBox.currentIndex()]) + 1), disableAutoRange=True, padding=0)
+        self.ui.gas_floor_graph.setRange(xRange=(0, len(gas_datas[-1][1:][self.ui.sensor_floor_comboBox.currentIndex()]) + 1), disableAutoRange=True, padding=0)
+        t_barChar = pg.BarGraphItem(x=np.arange(1, len(temp_datas[-1][1:][self.ui.sensor_floor_comboBox.currentIndex()]) + 1), height=[float(value) for value in temp_datas[-1][1:][self.ui.sensor_floor_comboBox.currentIndex()]], width=0.6, brush=(255, 0, 0))
+        g_barChar = pg.BarGraphItem(x=np.arange(1, len(gas_datas[-1][1:][self.ui.sensor_floor_comboBox.currentIndex()]) + 1), height=[(float(value) * 100) for value in gas_datas[-1][1:][self.ui.sensor_floor_comboBox.currentIndex()]], width=0.6, brush=(0, 97, 158))
+        self.ui.temp_floor_graph.addItem(t_barChar)
+        self.ui.gas_floor_graph.addItem(g_barChar)
 
         time_item = [data[0] for data in temp_datas]
-        temp_data_item = [float(data[self.ui.floor_comboBox.currentIndex() + 1][self.ui.temp_sensor_combobox.currentIndex()]) for data in temp_datas]
-        gas_data_item = [int(float(data[self.ui.floor_comboBox.currentIndex() + 1][self.ui.gas_sensor_combobox.currentIndex()]) * 100) for data in gas_datas]
+        temp_data_item = [float(data[self.ui.sensor_floor_comboBox.currentIndex() + 1][self.ui.temp_sensor_combobox.currentIndex()]) for data in temp_datas]
+        gas_data_item = [int(float(data[self.ui.sensor_floor_comboBox.currentIndex() + 1][self.ui.gas_sensor_combobox.currentIndex()]) * 100) for data in gas_datas]
 
         self.temp_sensor_graph_plot.setData(time_item, temp_data_item, pen='r', connect='finite')
         self.gas_sensor_graph_plot.setData(time_item, gas_data_item, pen='b', connect='finite')
@@ -119,15 +130,6 @@ class plot_data:
             #     self.text_02.setPos(data['x'][-1], data['g'+str(i).zfill(2)][-1] + 0.05)
             #     self.ui.gr_02.addItem(self.text_02)
 
-
-        self.ui.temp_floor_graph.setTitle('Temperature (%s)' % datetime.now().strftime('%Y/%m/%d %H:%M:%S'))
-        self.ui.gas_floor_graph.setTitle('Gas (%s)' % datetime.now().strftime('%Y/%m/%d %H:%M:%S'))
-        self.ui.temp_floor_graph.clear()
-        self.ui.gas_floor_graph.clear()
-        t_barChar = pg.BarGraphItem(x=np.arange(1, len(temp_datas[-1][1:][self.ui.floor_comboBox.currentIndex()]) + 1), height=[float(value) for value in temp_datas[-1][1:][self.ui.floor_comboBox.currentIndex()]], width=0.6, brush=(255, 0, 0))
-        g_barChar = pg.BarGraphItem(x=np.arange(1, len(gas_datas[-1][1:][self.ui.floor_comboBox.currentIndex()]) + 1), height=[(float(value) * 100) for value in gas_datas[-1][1:][self.ui.floor_comboBox.currentIndex()]], width=0.6, brush=(0, 97, 158))
-        self.ui.temp_floor_graph.addItem(t_barChar)
-        self.ui.gas_floor_graph.addItem(g_barChar)
 
 class TimeAxisItem(pg.AxisItem): 
     def __init__(self, *args, **kwargs):

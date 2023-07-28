@@ -35,16 +35,19 @@ class classification_thread(QThread):
         self.output = []
 
     def run(self):
+        input_temp_datas = self.temp_datas.copy()
+        input_gas_datas = self.gas_datas.copy()
+
         total_temp_data = []
         total_gas_data = []
 
-        for datas in self.temp_datas:
+        for datas in input_temp_datas:
             datas = datas[1:]
             frame_data = []
             for data in datas:
                 frame_data += data
             total_temp_data.append(frame_data)
-        for datas in self.gas_datas:
+        for datas in input_gas_datas:
             datas = datas[1:]
             frame_data = []
             for data in datas:
@@ -127,9 +130,9 @@ class analy_data:
             danger = True
         if len(self.gas_Fire_idx) != 0:
             danger = True
-
         self.Fire_status = danger
-        return self.Fire_status
+
+        return self.Fire_status, self.temp_Fire_idx, self.gas_Fire_idx
 
     def analysis_log(self, log):
 
