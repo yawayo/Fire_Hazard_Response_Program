@@ -77,6 +77,7 @@ class eva_draw:
         self.load_obj()
 
         self.path_route = None
+        self.sinario = 0
 
     def var_init(self):
         self.color()

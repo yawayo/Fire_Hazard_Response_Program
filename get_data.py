@@ -17,6 +17,8 @@ class db_thread(QThread):
         super().__init__()
 
         self.floor_idx_list = []
+        self.temp_index = []
+        self.gas_index = []
 
         self.IP = None
         self.Port = None
@@ -102,27 +104,25 @@ class db_thread(QThread):
 
             self.cur.execute(sql)
             result = self.cur.fetchall()
-            temp_index = []
-            gas_index = []
             for idx, type in enumerate(result[0]):
                 if type == 'temp':
-                    temp_index.append(idx)
+                    self.temp_index.append(idx)
                 if type == 'gas':
-                    gas_index.append(idx)
+                    self.gas_index.append(idx)
 
             all_temp_datas = []
             all_gas_datas = []
 
             for _ in range(self.sensor_stack):
-                all_temp_datas.append([time.time()] + self.list_split_per_floor(result[1], temp_index, self.floor_idx_list))
-                all_gas_datas.append([time.time()] + self.list_split_per_floor(result[1], gas_index, self.floor_idx_list))
+                all_temp_datas.append([time.time()] + self.list_split_per_floor(result[1], self.temp_index, self.floor_idx_list))
+                all_gas_datas.append([time.time()] + self.list_split_per_floor(result[1], self.gas_index, self.floor_idx_list))
 
             for data in result[1:]:
                 if self.working:
                     all_temp_datas.pop(0)
                     all_gas_datas.pop(0)
-                    all_temp_datas.append([time.time()] + self.list_split_per_floor(data, temp_index, self.floor_idx_list))
-                    all_gas_datas.append([time.time()] + self.list_split_per_floor(data, gas_index, self.floor_idx_list))
+                    all_temp_datas.append([time.time()] + self.list_split_per_floor(data, self.temp_index, self.floor_idx_list))
+                    all_gas_datas.append([time.time()] + self.list_split_per_floor(data, self.gas_index, self.floor_idx_list))
                     self.data_sig.emit(all_temp_datas, all_gas_datas)
                     time.sleep(self.speed / 1)
                 else:
@@ -203,7 +203,8 @@ class get_data:
         self.bg.eva_draw.Fire, temp_idx, gas_idx = self.ad.check_danger(temp_datas, gas_datas)
 
         if self.bg.eva_draw.Fire:
-            print(self.ad.temp_Fire_idx, self.ad.gas_Fire_idx)
+
+            self.wc.set_node_weight(self.ad.temp_Fire_idx, self.ad.gas_Fire_idx, self.db_worker.temp_index, self.db_worker.gas_index, self.db_worker.floor_idx_list)
 
             start_node = 'room10'
             if self.bg.eva_draw.Start_floor != 0:
@@ -219,6 +220,9 @@ class get_data:
             """
             spread of fire code here
             """
+            sinario_idx = self.ad.check_sinario(temp_datas, gas_datas)
+            if self.bg.eva_draw.sinario != sinario_idx:
+                print('change sinario')
 
         else:
             self.bg.Fire = False
@@ -248,7 +252,7 @@ class get_data:
 
     def system_log(self, log):
 
-        time_str = datetime.utcnow().strftime('%H:%M:%S.%f')[:-3]
+        time_str = datetime.today().strftime('%H:%M:%S.%f')[:-3]
 
         self.ui.system_log_table.setRowCount(self.ui.system_log_table.rowCount() + 1)
         self.ui.system_log_table.setItem(self.ui.system_log_table.rowCount() - 1, 0, QTableWidgetItem(time_str))
@@ -257,7 +261,7 @@ class get_data:
 
     def data_log(self, temp_log, gas_log):
 
-        time_str = datetime.utcnow().strftime('%H:%M:%S.%f')[:-3]
+        time_str = datetime.today().strftime('%H:%M:%S.%f')[:-3]
         temp_item = ', '.join([str(data) for data in temp_log][1:])
         gas_item = ', '.join([str(data) for data in gas_log][1:])
 
@@ -276,7 +280,7 @@ class get_data:
 
     def react_log(self, log):
 
-        time_str = datetime.utcnow().strftime('%H:%M:%S.%f')[:-3]
+        time_str = datetime.today().strftime('%H:%M:%S.%f')[:-3]
 
         self.ui.react_log_table.setRowCount(self.ui.react_log_table.rowCount() + 1)
         self.ui.react_log_table.setItem(self.ui.react_log_table.rowCount() - 1, 0, QTableWidgetItem(time_str))
