@@ -1,3 +1,5 @@
+import time
+
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QTableWidgetItem
 import numpy as np
@@ -11,11 +13,14 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 torch.manual_seed(777)
 if device == 'cuda':
     torch.cuda.manual_seed_all(777)
-model = resnet18()
-model = nn.DataParallel(model).to(device)
+fire_Detect_model = resnet18()
+fire_Detect_model = nn.DataParallel(fire_Detect_model).to(device)
 
-model.load_state_dict(torch.load("model/weight.pt", map_location=torch.device('cpu')))
-model.eval()
+fire_Detect_model.load_state_dict(torch.load("model/weight.pt", map_location=torch.device('cpu')))
+fire_Detect_model.eval()
+
+scenario_serach_model = resnet18()
+
 
 RP = RecurrencePlot()
 
@@ -37,126 +42,86 @@ class FireDetection_thread(QThread):
         input_temp_datas = self.temp_datas.copy()
         input_gas_datas = self.gas_datas.copy()
 
-        total_temp_data = []
-        total_gas_data = []
+        total_temp_datas = [[], [], [], [], [], []]
+        total_gas_datas = [[], [], [], [], [], []]
+        for frame_temp_datas in input_temp_datas:
+            for floor, floor_temp_datas in enumerate(frame_temp_datas[1:]):
+                total_temp_datas[floor].append(floor_temp_datas)
+        for frame_gas_datas in input_gas_datas:
+            for floor, floor_gas_datas in enumerate(frame_gas_datas[1:]):
+                total_gas_datas[floor].append(floor_gas_datas)
 
-        for datas in input_temp_datas:
-            datas = datas[1:]
-            frame_data = []
-            for data in datas:
-                frame_data += data
-            total_temp_data.append(frame_data)
-        for datas in input_gas_datas:
-            datas = datas[1:]
-            frame_data = []
-            for data in datas:
-                frame_data += data
-            total_gas_data.append(frame_data)
+        danger_temp_idx = [[], [], [], [], [], []]
+        danger_gas_idx = [[], [], [], [], [], []]
 
-        temp_danger_idx = []
-        gas_danger_idx = []
+        for floor, floor_temp_datas in enumerate(total_temp_datas):
+            for idx, value in enumerate(floor_temp_datas[-1]):
+                if float(value) >= 22.0:
+                    if not(idx in danger_temp_idx[floor]):
+                        danger_temp_idx[floor].append(idx)
+            total_temp_datas_reshaped = [floor_temp_datas[idx] for idx in range(len(floor_temp_datas))]
+            total_temp_datas_reshaped = list(zip(*total_temp_datas_reshaped))
+            for idx, input_datas_str in enumerate(total_temp_datas_reshaped):
+                input_datas_float = [float(value) for value in input_datas_str]
+                input_data = (torch.tensor(self.rp.fit_transform(np.array([input_datas_float]))).unsqueeze(dim=0)).to(device, dtype=torch.float)
+                output = fire_Detect_model(input_data)
+                pred = output.argmax(dim=1, keepdim=True)
+                if pred == 1:
+                    if not(idx in danger_temp_idx[floor]):
+                        danger_temp_idx[floor].append(idx)
 
-        for idx, value in enumerate(total_temp_data[-1]):
-            if float(value) >= 25.0:
-                if not(idx in temp_danger_idx):
-                    temp_danger_idx.append(idx)
-        for idx, value in enumerate(total_gas_data[-1]):
-            if float(value) >= 0.02:
-                if not(idx in gas_danger_idx):
-                    gas_danger_idx.append(idx)
+        for floor, floor_gas_datas in enumerate(total_gas_datas):
+            for idx, value in enumerate(floor_gas_datas[-1]):
+                if float(value) >= 0.01:
+                    if not(idx in danger_gas_idx[floor]):
+                        danger_gas_idx[floor].append(idx)
 
-        total_temp_datas_reshaped = [total_temp_data[idx] for idx in range(len(total_temp_data))]
-        total_temp_datas_reshaped = list(zip(*total_temp_datas_reshaped))
-        total_gas_datas_reshaped = [total_gas_data[idx] for idx in range(len(total_gas_data))]
-        total_gas_datas_reshaped = list(zip(*total_gas_datas_reshaped))
+        self.output_sig.emit(danger_temp_idx, danger_gas_idx)
 
-        for idx, input_datas_str in enumerate(total_temp_datas_reshaped):
-            input_datas_float = [float(value) for value in input_datas_str]
-            input_data = (torch.tensor(self.rp.fit_transform(np.array([input_datas_float]))).unsqueeze(dim=0)).to(device, dtype=torch.float)
-            output = model(input_data)
-            pred = output.argmax(dim=1, keepdim=True)
-            if pred == 1:
-                if not(idx in temp_danger_idx):
-                    temp_danger_idx.append(idx)
-
-        self.output_sig.emit(temp_danger_idx, gas_danger_idx)
-
-class SinarioMatching_thread(QThread):
-    output_sig = pyqtSignal(object, object)
+class scenarioMatching_thread(QThread):
+    output_sig = pyqtSignal(object)
 
     def __init__(self):
         super().__init__( )
 
         self.working = False
 
-        self.sinario = 0
+        self.scenario = [-1, -1, -1, -1]
+        self.Fire = None
         self.temp_datas = None
         self.gas_datas = None
-        self.output = []
 
     def run(self):
+        Fire = self.Fire
         input_temp_datas = self.temp_datas.copy()
         input_gas_datas = self.gas_datas.copy()
 
-        total_temp_data = []
-        total_gas_data = []
-        for datas in input_temp_datas:
-            datas = datas[1:]
-            frame_data = []
-            for data in datas:
-                frame_data += data
-            total_temp_data.append(frame_data)
-        for datas in input_gas_datas:
-            datas = datas[1:]
-            frame_data = []
-            for data in datas:
-                frame_data += data
-            total_gas_data.append(frame_data)
+        for floor, danger in enumerate(Fire):
+            if floor != 0:
+                if danger:
+                    floor_temp_data = [frame_data[floor + 1] for frame_data in input_temp_datas]
+                    floor_gas_data = [frame_data[floor + 1] for frame_data in input_gas_datas]
+                    """
+                    remove stair sensor code here
+                    """
 
+                    DL_output  = 3
+                    self.scenario[floor - 1] = DL_output
 
-        print(np.array(total_temp_data).shape, np.array(total_gas_data).shape)
-
-        # temp_danger_idx = []
-        # gas_danger_idx = []
-        #
-        # for idx, value in enumerate(total_temp_data[-1]):
-        #     if float(value) >= 25.0:
-        #         if not(idx in temp_danger_idx):
-        #             temp_danger_idx.append(idx)
-        # for idx, value in enumerate(total_gas_data[-1]):
-        #     if float(value) >= 0.02:
-        #         if not(idx in gas_danger_idx):
-        #             gas_danger_idx.append(idx)
-        #
-        # total_temp_datas_reshaped = [total_temp_data[idx] for idx in range(len(total_temp_data))]
-        # total_temp_datas_reshaped = list(zip(*total_temp_datas_reshaped))
-        # total_gas_datas_reshaped = [total_gas_data[idx] for idx in range(len(total_gas_data))]
-        # total_gas_datas_reshaped = list(zip(*total_gas_datas_reshaped))
-        #
-        # for idx, input_datas_str in enumerate(total_temp_datas_reshaped):
-        #     input_datas_float = [float(value) for value in input_datas_str]
-        #     input_data = (torch.tensor(self.rp.fit_transform(np.array([input_datas_float]))).unsqueeze(dim=0)).to(device, dtype=torch.float)
-        #     output = model(input_data)
-        #     pred = output.argmax(dim=1, keepdim=True)
-        #     if pred == 1:
-        #         if not(idx in temp_danger_idx):
-        #             temp_danger_idx.append(idx)
-
-        self.output_sig.emit(temp_danger_idx, gas_danger_idx)
+        self.output_sig.emit(self.scenario)
 
 class analy_data:
     def __init__(self, ui):
         super().__init__()
         self.ui = ui
         self.FireDetection_worker = None
-        self.SinarioMatching_worker = None
+        self.scenarioMatching_worker = None
         self.warning_count = 0
         self.fire_count = 0
         self.Fire_status = False
         self.temp_Fire_idx = []
         self.gas_Fire_idx = []
-        self.last_sinario_idx = 0
-        self.sinario_idx = 0
+        self.scenario_idx = [-1, -1, -1, -1]
         self.init_value()
 
     def init_value(self):
@@ -165,28 +130,34 @@ class analy_data:
         self.Fire_status = False
         self.temp_Fire_idx = []
         self.gas_Fire_idx = []
-        self.last_sinario_idx = 0
-        self.sinario_idx = 0
+        self.scenario_idx = [-1, -1, -1, -1]
         self.FireDetection_worker = FireDetection_thread()
         self.FireDetection_worker.output_sig.connect(self.FireDetection_data_analy)
-        self.SinarioMatching_worker = SinarioMatching_thread()
-        self.SinarioMatching_worker.output_sig.connect(self.SinarioMatching_data_analy)
+        self.scenarioMatching_worker = scenarioMatching_thread()
+        self.scenarioMatching_worker.output_sig.connect(self.scenarioMatching_data_analy)
 
     def FireDetection_data_analy(self, temp_output, gas_output):
         self.temp_Fire_idx = temp_output
         self.gas_Fire_idx = gas_output
-        if (len(self.temp_Fire_idx) == 0) and (len(self.gas_Fire_idx) == 0):
+        check_temp = False
+        check_gas = False
+        for temp, gas in zip(self.temp_Fire_idx, self.gas_Fire_idx):
+            if len(temp) != 0:
+                check_temp = True
+            if len(gas) != 0:
+                check_gas = True
+
+        if (not check_temp) and (not check_gas):
             self.analysis_log("End Fire Detection : None")
         else:
-            if len(self.temp_Fire_idx) != 0:
+            if check_temp:
                 self.analysis_log("End Fire Detection(temp) : " + str(self.temp_Fire_idx))
-            if len(self.gas_Fire_idx) != 0:
+            if check_gas:
                 self.analysis_log("End Fire Detection(gas) : " + str(self.gas_Fire_idx))
 
-    def SinarioMatching_data_analy(self, sinario_output):
-        self.last_sinario_idx = self.sinario_idx
-        self.sinario_idx = sinario_output
-        self.analysis_log("End Sinario(temp) : " + str(sinario_output))
+    def scenarioMatching_data_analy(self, scenario_output):
+        self.scenario_idx = scenario_output
+        self.analysis_log("End scenario : " + str(scenario_output))
 
     def check_danger(self, temp_datas, gas_datas):
 
@@ -200,28 +171,31 @@ class analy_data:
             self.FireDetection_worker.start()
             self.analysis_log("Start Fire Detection")
 
-        danger = False
-        if len(self.temp_Fire_idx) != 0:
-            danger = True
-        if len(self.gas_Fire_idx) != 0:
-            danger = True
+        danger = [False for i in range(5)]
+        for floor, floor_idx in enumerate(self.temp_Fire_idx):
+            if len(floor_idx) != 0:
+                danger[floor] = True
+        for floor, floor_idx in enumerate(self.gas_Fire_idx):
+            if len(floor_idx) != 0:
+                danger[floor] = True
         self.Fire_status = danger
 
         return self.Fire_status, self.temp_Fire_idx, self.gas_Fire_idx
 
-    def check_sinario(self, temp_datas, gas_datas):
+    def check_scenario(self, Fire, temp_datas, gas_datas):
 
-        self.SinarioMatching_worker.temp_datas = temp_datas
-        self.SinarioMatching_worker.gas_datas = gas_datas
+        self.scenarioMatching_worker.Fire = Fire
+        self.scenarioMatching_worker.temp_datas = temp_datas
+        self.scenarioMatching_worker.gas_datas = gas_datas
 
-        if self.SinarioMatching_worker.isRunning():
-            self.SinarioMatching_worker.working = False
+        if self.scenarioMatching_worker.isRunning():
+            self.scenarioMatching_worker.working = False
         else:
-            self.SinarioMatching_worker.working = True
-            self.SinarioMatching_worker.start()
-            self.analysis_log("Start sinario search")
+            self.scenarioMatching_worker.working = True
+            self.scenarioMatching_worker.start()
+            self.analysis_log("Start scenario search")
 
-        return self.sinario_idx
+        return self.scenario_idx
 
     def analysis_log(self, log):
 

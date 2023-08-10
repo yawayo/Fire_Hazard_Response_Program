@@ -270,9 +270,9 @@
                <number>0</number>
               </property>
               <item>
-               <widget class="QRadioButton" name="WatchMode0">
+               <widget class="QRadioButton" name="WatchMode1">
                 <property name="text">
-                 <string>전체</string>
+                 <string>층별(3D)</string>
                 </property>
                 <property name="checked">
                  <bool>true</bool>
@@ -280,19 +280,19 @@
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="WatchMode1">
+               <widget class="QRadioButton" name="WatchMode2">
                 <property name="text">
-                 <string>층별</string>
-                </property>
-                <property name="checked">
-                 <bool>false</bool>
+                 <string>층별(2D)</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QRadioButton" name="WatchMode2">
+               <widget class="QRadioButton" name="WatchMode0">
                 <property name="text">
-                 <string>2D</string>
+                 <string>전체</string>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
                 </property>
                </widget>
               </item>
@@ -748,20 +748,6 @@
                 </item>
                </widget>
               </item>
-              <item>
-               <widget class="QPushButton" name="route_change_btn">
-                <property name="font">
-                 <font>
-                  <family>KoPubWorld돋움체 Medium</family>
-                  <weight>50</weight>
-                  <bold>false</bold>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>Change</string>
-                </property>
-               </widget>
-              </item>
              </layout>
             </widget>
            </item>
@@ -857,6 +843,11 @@
                 <item>
                  <property name="text">
                   <string>5F</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>6F</string>
                  </property>
                 </item>
                </widget>

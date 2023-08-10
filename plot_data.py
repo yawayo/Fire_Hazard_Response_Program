@@ -97,8 +97,18 @@ class plot_data:
             gas_floor_graph_axis.setTicks(gas_ticks)
 
         time_item = [data[0] for data in temp_datas]
-        temp_data_item = [float(data[self.ui.sensor_floor_comboBox.currentIndex() + 1][self.ui.temp_sensor_combobox.currentIndex()]) for data in temp_datas]
-        gas_data_item = [int(float(data[self.ui.sensor_floor_comboBox.currentIndex() + 1][self.ui.gas_sensor_combobox.currentIndex()]) * 100) for data in gas_datas]
+        temp_data_item = []
+        gas_data_item = []
+        if len(temp_datas[0][self.ui.sensor_floor_comboBox.currentIndex() + 1]) == 0:
+            for _ in range(len(temp_datas)):
+                temp_data_item.append(0.0)
+        else:
+            temp_data_item = [float(data[self.ui.sensor_floor_comboBox.currentIndex() + 1][self.ui.temp_sensor_combobox.currentIndex()]) for data in temp_datas]
+        if len(gas_datas[0][self.ui.sensor_floor_comboBox.currentIndex() + 1]) == 0:
+            for _ in range(len(gas_datas)):
+                gas_data_item.append(0.0)
+        else:
+            gas_data_item = [int(float(data[self.ui.sensor_floor_comboBox.currentIndex() + 1][self.ui.gas_sensor_combobox.currentIndex()]) * 100) for data in gas_datas]
 
         self.temp_sensor_graph_plot.setData(time_item, temp_data_item, pen='r', connect='finite')
         self.gas_sensor_graph_plot.setData(time_item, gas_data_item, pen='b', connect='finite')

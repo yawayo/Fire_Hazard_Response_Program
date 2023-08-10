@@ -45,6 +45,7 @@ class func_set:
         self.ui.WatchFloor_comboBox.currentIndexChanged.connect(self.gd.change_Watch_Floor)
         self.ui.StartFloor_comboBox.currentIndexChanged.connect(self.gd.change_Start_Point)
         self.ui.StartRoom_comboBox.currentIndexChanged.connect(self.gd.change_Start_Point)
+        self.ui.N_min_later_combobox.currentIndexChanged.connect(self.gd.change_N_min)
 
     def resizeWidget(self):
         self.gd.resizeWidget()

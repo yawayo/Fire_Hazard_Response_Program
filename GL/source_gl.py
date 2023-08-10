@@ -1,5 +1,6 @@
 import math
 from OpenGL.GL import *
+import numpy as np
 
 class gl_draw:
     def __init__(self):
@@ -29,10 +30,10 @@ class gl_draw:
         self.draw_1F_Bottom()
 
         self.draw_EV_3D(0.0, self.height * 5)
-        self.draw_Floor_Bottom(self.height * 1)
-        self.draw_Floor_Bottom(self.height * 2)
-        self.draw_Floor_Bottom(self.height * 3)
-        self.draw_Floor_Bottom(self.height * 4)
+        self.draw_Floor_Bottom(self.height * 1, 1)
+        self.draw_Floor_Bottom(self.height * 2, 2)
+        self.draw_Floor_Bottom(self.height * 3, 3)
+        self.draw_Floor_Bottom(self.height * 4, 4)
         glPopMatrix()
         glPushMatrix()
         self.draw_Stairs(self.height * 0, self.height, 10)
@@ -71,7 +72,7 @@ class gl_draw:
         else:
             self.draw_Stairs(self.height * (self.Watch_floor - 1), self.height, 10)
             self.draw_Stairs(self.height * self.Watch_floor, self.height, 10)
-            self.draw_Floor_Bottom(self.height * self.Watch_floor)
+            self.draw_Floor_Bottom(self.height * self.Watch_floor, self.Watch_floor)
             self.draw_Back_Wall(self.height * self.Watch_floor, self.height)
             # self.draw_Room_Wall(self.height * self.Watch_floor)
             self.draw_Front_Wall(self.height * self.Watch_floor, self.height)
@@ -84,7 +85,7 @@ class gl_draw:
         if self.Watch_floor == 0:
             self.draw_1F_Bottom()
         else:
-            self.draw_Floor_Bottom(0.0)
+            self.draw_Floor_Bottom(0.0, self.Watch_floor)
 
         self.draw_Stairs(0.0, 0.0, 10)
         self.draw_EV_2D()
@@ -94,8 +95,14 @@ class gl_draw:
     def color(self):
         self.base_color = [0.1, 0.1, 0.1, 1.0]
         self.pillar_color = [0.7, 0.7, 0.7, 1.0]
-        self.ev_color = [0.1, 0.4, 0.1, 1.0]
-        self.bottom_color = [0.8, 0.8, 0.8, 1.0]
+        self.ev_color = [0.4, 0.4, 0.4, 1.0]
+        self.bottom_color = [[[0.0, 1.0, 0.0, 1.0]]]
+        for _ in range(4):
+            floor_color_set = []
+            for _ in range(7):
+                floor_color_set.append([0.0, 1.0, 0.0, 1.0])
+            self.bottom_color.append(floor_color_set)
+
         self.hallway_color = [0.5, 0.5, 0.5, 1.0]
         self.back_wall_color = [0.3, 0.3, 0.3, 1.0]
         self.front_wall_color = [0.6, 0.6, 0.6, 0.4]
@@ -246,7 +253,7 @@ class gl_draw:
                         [-0.81, 0.50, dif_base],
                         [-0.81, 0.37, dif_base]]
 
-        glColor(self.bottom_color[0], self.bottom_color[1], self.bottom_color[2], self.bottom_color[3])
+        glColor(self.bottom_color[0][0][0], self.bottom_color[0][0][1], self.bottom_color[0][0][2], self.bottom_color[0][0][3])
         for room in all_room_point:
             glBegin(GL_POLYGON)
             for point in room:
@@ -377,7 +384,7 @@ class gl_draw:
                 glVertex3f(point)
             glEnd()
 
-    def draw_Floor_Bottom(self, height):
+    def draw_Floor_Bottom(self, height, floor):
         all_room_point = []
         room_01 = [[-2.87, -0.16, height],
                     [-2.87, -1.47, height],
@@ -478,8 +485,8 @@ class gl_draw:
                         [-0.87, -0.16, height]]
 
         glBegin(GL_QUADS)
-        glColor(self.bottom_color[0], self.bottom_color[1], self.bottom_color[2], self.bottom_color[3])
-        for room in all_room_point:
+        for idx, room in enumerate(all_room_point):
+            glColor(self.bottom_color[floor][idx][0], self.bottom_color[floor][idx][1], self.bottom_color[floor][idx][2], self.bottom_color[floor][idx][3])
             for point in room:
                 glVertex3fv(point)
         glColor(self.hallway_color[0], self.hallway_color[1], self.hallway_color[2], self.hallway_color[3])

@@ -56,7 +56,7 @@ class eva_draw:
     def __init__(self):
         super().__init__()
 
-        self.Fire = False
+        self.Fire = [False for _ in range(5)]
 
         self.height = 0.4
 
@@ -77,7 +77,6 @@ class eva_draw:
         self.load_obj()
 
         self.path_route = None
-        self.sinario = 0
 
     def var_init(self):
         self.color()
@@ -87,8 +86,16 @@ class eva_draw:
             # 1 Floor room ###########################################################################
 
             # Escape Node
-            'escape00': [-0.263, 0.546],
-            'stair0': [0.084, 0.90],
+            'room00': [-0.61, -0.3125],
+            'room01': [0.21, 0.20],
+            'room02': [-0.1665, -0.3325],
+
+            # hallway
+            'hallway00': [-0.263, 0.546],
+            'hallway01': [-0.263, 0.10675],
+
+            'stair0': [0.00, 0.73],
+            'escape00': [0.0665, -0.7325],
 
             # 2 Floor room ###########################################################################
 
@@ -100,38 +107,6 @@ class eva_draw:
             'room14': [1.065, 0.54],
             'room15': [1.775, 0.87],
             'room16': [2.485, 1.395],
-
-            # hallway
-            'hallway00': [-2.16, -0.245],
-            'hallway01': [-1.8, -0.245],
-            'hallway02': [-1.436, -0.245],
-            'hallway03': [-1.075, -0.245],
-            'hallway04': [-0.79, -0.245],
-            'hallway05': [-0.79, 0.028],
-            'hallway06': [-0.79, 0.30],
-            'hallway07': [-0.527, 0.423],
-            'hallway08': [-0.263, 0.546],
-            'hallway09': [0, 0.668],
-            'hallway10': [0.355, 0.825],
-            'hallway11': [0.71, 0.998],
-            'hallway12': [1.065, 1.17],
-            'hallway13': [1.421, 1.333],
-            'hallway14': [1.775, 1.495],
-            'hallway15': [2.13, 1.655],
-
-            # Stair
-            'stair1': [-0.10, 0.73],
-
-            # 3 Floor room ###########################################################################
-
-            # room
-            'room20': [-2.515, -0.815],
-            'room21': [-1.8, -0.74],
-            'room22': [-0.355, -0.115],
-            'room23': [0.355, 0.215],
-            'room24': [1.065, 0.54],
-            'room25': [1.775, 0.87],
-            'room26': [2.485, 1.395],
 
             # hallway
             'hallway20': [-2.16, -0.245],
@@ -152,18 +127,18 @@ class eva_draw:
             'hallway35': [2.13, 1.655],
 
             # Stair
-            'stair2': [-0.10, 0.73],
+            'stair1': [-0.10, 0.73],
 
-            # 4 Floor room ###########################################################################
+            # 3 Floor room ###########################################################################
 
             # room
-            'room30': [-2.515, -0.815],
-            'room31': [-1.8, -0.74],
-            'room32': [-0.355, -0.115],
-            'room33': [0.355, 0.215],
-            'room34': [1.065, 0.54],
-            'room35': [1.775, 0.87],
-            'room36': [2.485, 1.395],
+            'room20': [-2.515, -0.815],
+            'room21': [-1.8, -0.74],
+            'room22': [-0.355, -0.115],
+            'room23': [0.355, 0.215],
+            'room24': [1.065, 0.54],
+            'room25': [1.775, 0.87],
+            'room26': [2.485, 1.395],
 
             # hallway
             'hallway40': [-2.16, -0.245],
@@ -184,18 +159,18 @@ class eva_draw:
             'hallway55': [2.13, 1.655],
 
             # Stair
-            'stair3': [-0.10, 0.73],
+            'stair2': [-0.10, 0.73],
 
-            # 5 Floor room ###########################################################################
+            # 4 Floor room ###########################################################################
 
             # room
-            'room40': [-2.515, -0.815],
-            'room41': [-1.8, -0.74],
-            'room42': [-0.355, -0.115],
-            'room43': [0.355, 0.215],
-            'room44': [1.065, 0.54],
-            'room45': [1.775, 0.87],
-            'room46': [2.485, 1.395],
+            'room30': [-2.515, -0.815],
+            'room31': [-1.8, -0.74],
+            'room32': [-0.355, -0.115],
+            'room33': [0.355, 0.215],
+            'room34': [1.065, 0.54],
+            'room35': [1.775, 0.87],
+            'room36': [2.485, 1.395],
 
             # hallway
             'hallway60': [-2.16, -0.245],
@@ -214,6 +189,38 @@ class eva_draw:
             'hallway73': [1.421, 1.333],
             'hallway74': [1.775, 1.495],
             'hallway75': [2.13, 1.655],
+
+            # Stair
+            'stair3': [-0.10, 0.73],
+
+            # 5 Floor room ###########################################################################
+
+            # room
+            'room40': [-2.515, -0.815],
+            'room41': [-1.8, -0.74],
+            'room42': [-0.355, -0.115],
+            'room43': [0.355, 0.215],
+            'room44': [1.065, 0.54],
+            'room45': [1.775, 0.87],
+            'room46': [2.485, 1.395],
+
+            # hallway
+            'hallway80': [-2.16, -0.245],
+            'hallway81': [-1.8, -0.245],
+            'hallway82': [-1.436, -0.245],
+            'hallway83': [-1.075, -0.245],
+            'hallway84': [-0.79, -0.245],
+            'hallway85': [-0.79, 0.028],
+            'hallway86': [-0.79, 0.30],
+            'hallway87': [-0.527, 0.423],
+            'hallway88': [-0.263, 0.546],
+            'hallway89': [0, 0.668],
+            'hallway90': [0.355, 0.825],
+            'hallway91': [0.71, 0.998],
+            'hallway92': [1.065, 1.17],
+            'hallway93': [1.421, 1.333],
+            'hallway94': [1.775, 1.495],
+            'hallway95': [2.13, 1.655],
 
             # Stair
             'stair4': [-0.10, 0.73],
@@ -243,7 +250,11 @@ class eva_draw:
         }
 
     def draw_Danger_Building(self):
-        if self.Fire:
+        Fire = False
+        for status in self.Fire:
+            if status:
+                Fire = True
+        if Fire:
             if self.Watch_floor == 0:
                 self.draw_Obj(self.room_position[2][0], self.room_position[2][1], self.height * self.Start_floor)
             else:
@@ -260,7 +271,7 @@ class eva_draw:
                                         Thickness, size)
 
                     elif 'hallway' in self.path_route[idx]:
-                        height_point = self.height * (int(int(self.path_route[idx][-2:]) / 20) + 1)
+                        height_point = self.height * int(int(self.path_route[idx][-2:]) / 20.0)
                         self.draw_Arrow(self.node_point[self.path_route[idx]][0], self.node_point[self.path_route[idx]][1], height_point,
                                         self.node_point[self.path_route[idx + 1]][0], self.node_point[self.path_route[idx + 1]][1], height_point,
                                         Thickness, size)
@@ -332,7 +343,20 @@ class eva_draw:
                                             Thickness, size)
 
     def draw_Danger_Floor_3D(self):
-        if self.Fire:
+        # wy_node = ['room00', 'room01', 'room02', 'hallway00', 'hallway01', 'escape00', 'stair0']
+        # glColor(self.allow_color[0], self.allow_color[1], self.allow_color[2], self.allow_color[3])
+        # glPointSize(5.0)
+        # glBegin(GL_POINTS)
+        # for node in wy_node:
+        #     glVertex3fv(self.node_point[node] + [0.01])
+        # glEnd()
+        #
+
+        Fire = False
+        for status in self.Fire:
+            if status:
+                Fire = True
+        if Fire:
             if self.Watch_floor == self.Start_floor:
                 if self.Watch_floor == 0:
                     self.draw_Obj(self.room_position[2][0], self.room_position[2][1], self.height * self.Watch_floor)
@@ -351,8 +375,8 @@ class eva_draw:
                                             Thickness, size)
 
                     elif 'hallway' in self.path_route[idx]:
-                        if (int(int(self.path_route[idx][-2:]) / 20) + 1) == self.Watch_floor:
-                            height_point = self.height * (int(int(self.path_route[idx][-2:]) / 20) + 1)
+                        if (int(int(self.path_route[idx][-2:]) / 20)) == self.Watch_floor:
+                            height_point = self.height * (int(int(self.path_route[idx][-2:]) / 20))
                             self.draw_Arrow(self.node_point[self.path_route[idx]][0], self.node_point[self.path_route[idx]][1], height_point,
                                             self.node_point[self.path_route[idx + 1]][0], self.node_point[self.path_route[idx + 1]][1], height_point,
                                             Thickness, size)
@@ -395,9 +419,19 @@ class eva_draw:
                                         self.draw_Arrow(self.node_point[center_node][0] + 1, self.node_point[end_node][1] - 0.07, end_height_point,
                                                         self.node_point[center_node][0] - 1, self.node_point[end_node][1] - 0.07, end_height_point,
                                                         Thickness, size)
+                        else:
+                            height_point = self.height * int(self.path_route[idx][-1:])
+                            self.draw_Arrow(self.node_point[self.path_route[idx]][0], self.node_point[self.path_route[idx]][1], height_point,
+                                            self.node_point[self.path_route[idx + 1]][0], self.node_point[self.path_route[idx + 1]][1], height_point,
+                                            Thickness, size)
+
 
     def draw_Danger_Floor_2D(self):
-        if self.Fire:
+        Fire = False
+        for status in self.Fire:
+            if status:
+                Fire = True
+        if Fire:
             if self.Watch_floor == self.Start_floor:
                 if self.Watch_floor == 0:
                     self.draw_Obj(self.room_position[2][0], self.room_position[2][1], self.height * self.Watch_floor)
@@ -415,7 +449,7 @@ class eva_draw:
                                             Thickness, size)
 
                     elif 'hallway' in self.path_route[idx]:
-                        if (int(int(self.path_route[idx][-2:]) / 20) + 1) == self.Watch_floor:
+                        if (int(int(self.path_route[idx][-2:]) / 20)) == self.Watch_floor:
                             self.draw_Arrow(self.node_point[self.path_route[idx]][0], self.node_point[self.path_route[idx]][1], 0.0,
                                             self.node_point[self.path_route[idx + 1]][0], self.node_point[self.path_route[idx + 1]][1], 0.0,
                                             Thickness, size)
@@ -476,13 +510,13 @@ class eva_draw:
         glRotatef(90.0, 1.0, 0.0, 0.0)
         glScalef(*scene_scale)
 
-        for mesh in scene.mesh_list:
-            glBegin(GL_TRIANGLES)
-            glColor(self.human_color[0], self.human_color[1], self.human_color[2], self.human_color[3])
-            for face in mesh.faces:
-                for vertex_i in face:
-                    glVertex3f(*scene.vertices[vertex_i])
-            glEnd()
+        # for mesh in scene.mesh_list:
+        #     glBegin(GL_TRIANGLES)
+        #     glColor(self.human_color[0], self.human_color[1], self.human_color[2], self.human_color[3])
+        #     for face in mesh.faces:
+        #         for vertex_i in face:
+        #             glVertex3f(*scene.vertices[vertex_i])
+        #     glEnd()
         glPopMatrix()
 
     def draw_Arrow(self, x1, y1, z1, x2, y2, z2, Thickness, size):

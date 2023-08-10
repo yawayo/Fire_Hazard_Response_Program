@@ -17,8 +17,8 @@ class db_thread(QThread):
         super().__init__()
 
         self.floor_idx_list = []
-        self.temp_index = []
-        self.gas_index = []
+        self.temp_index = [[], [], [], [], [], []]
+        self.gas_index = [[], [], [], [], [], []]
 
         self.IP = None
         self.Port = None
@@ -39,11 +39,12 @@ class db_thread(QThread):
 
     def var_init(self):
         idx_1F = [i for i in range(1, 12)]
-        idx_2F = [i for i in range(12, 58)]
-        idx_3F = [i for i in range(58, 107)]
-        idx_4F = [i for i in range(107, 155)]
-        idx_5F = [i for i in range(155, 205)]
-        self.floor_idx_list = [idx_1F, idx_2F, idx_3F, idx_4F, idx_5F]
+        idx_2F = [i for i in range(12, 61)]
+        idx_3F = [i for i in range(61, 110)]
+        idx_4F = [i for i in range(110, 159)]
+        idx_5F = [i for i in range(159, 208)]
+        idx_6F = [i for i in range(208, 210)]
+        self.floor_idx_list = [idx_1F, idx_2F, idx_3F, idx_4F, idx_5F, idx_6F]
 
     def connect_DB(self):
         if not self.connection:
@@ -85,14 +86,13 @@ class db_thread(QThread):
             except Exception as err:
                 print(err)
 
-    def list_split_per_floor(self, data, all_index, split_idx):
+    def list_split_per_floor(self, data, all_index):
         output = []
-        for _ in range(len(split_idx)):
+        for _ in range(len(all_index)):
             output.append([])
-        for floor, idx_list in enumerate(split_idx):
-            for idx in all_index:
-                if idx in idx_list:
-                    output[floor].append(data[idx])
+        for floor, idx_list in enumerate(all_index):
+            for idx in idx_list:
+                output[floor].append(data[idx])
 
         return output
 
@@ -100,29 +100,37 @@ class db_thread(QThread):
         self.connect_DB()
         if self.connection:
 
-            sql = "SELECT * FROM data_all;"
+            sql = "SELECT * FROM sensor_data;"
 
             self.cur.execute(sql)
             result = self.cur.fetchall()
             for idx, type in enumerate(result[0]):
+                this_floor = 0
+                for floor, floor_nodes in enumerate(self.floor_idx_list):
+                    if idx in floor_nodes:
+                        this_floor = floor
                 if type == 'temp':
-                    self.temp_index.append(idx)
+                    self.temp_index[this_floor].append(idx)
                 if type == 'gas':
-                    self.gas_index.append(idx)
+                    self.gas_index[this_floor].append(idx)
 
             all_temp_datas = []
             all_gas_datas = []
 
             for _ in range(self.sensor_stack):
-                all_temp_datas.append([time.time()] + self.list_split_per_floor(result[1], self.temp_index, self.floor_idx_list))
-                all_gas_datas.append([time.time()] + self.list_split_per_floor(result[1], self.gas_index, self.floor_idx_list))
+                temp_output = self.list_split_per_floor(result[1], self.temp_index)
+                gas_output = self.list_split_per_floor(result[1], self.gas_index)
+                all_temp_datas.append([time.time()] + temp_output)
+                all_gas_datas.append([time.time()] + gas_output)
 
             for data in result[1:]:
                 if self.working:
+                    temp_output = self.list_split_per_floor(data, self.temp_index)
+                    gas_output = self.list_split_per_floor(data, self.gas_index)
                     all_temp_datas.pop(0)
                     all_gas_datas.pop(0)
-                    all_temp_datas.append([time.time()] + self.list_split_per_floor(data, self.temp_index, self.floor_idx_list))
-                    all_gas_datas.append([time.time()] + self.list_split_per_floor(data, self.gas_index, self.floor_idx_list))
+                    all_temp_datas.append([time.time()] + temp_output)
+                    all_gas_datas.append([time.time()] + gas_output)
                     self.data_sig.emit(all_temp_datas, all_gas_datas)
                     time.sleep(self.speed / 1)
                 else:
@@ -202,9 +210,12 @@ class get_data:
         self.pd.data_plot(temp_datas, gas_datas)
         self.bg.eva_draw.Fire, temp_idx, gas_idx = self.ad.check_danger(temp_datas, gas_datas)
 
-        if self.bg.eva_draw.Fire:
-
-            self.wc.set_node_weight(self.ad.temp_Fire_idx, self.ad.gas_Fire_idx, self.db_worker.temp_index, self.db_worker.gas_index, self.db_worker.floor_idx_list)
+        Fire = False
+        for status in self.bg.eva_draw.Fire:
+            if status:
+                Fire = True
+        if Fire:
+            self.wc.set_node_weight(self.ad.temp_Fire_idx, self.ad.gas_Fire_idx, self.db_worker.temp_index, self.db_worker.gas_index)
 
             start_node = 'room10'
             if self.bg.eva_draw.Start_floor != 0:
@@ -217,15 +228,14 @@ class get_data:
                 path_output += point + ' -> '
             self.react_log(path_output[:-3])
 
-            """
-            spread of fire code here
-            """
-            sinario_idx = self.ad.check_sinario(temp_datas, gas_datas)
-            if self.bg.eva_draw.sinario != sinario_idx:
-                print('change sinario')
+            scenario_idx = self.ad.check_scenario(self.bg.eva_draw.Fire, temp_datas, gas_datas)
+            for i in range(len(scenario_idx)):
+                if self.bg.scenario_idx[i] != scenario_idx[i]:
+                    self.bg.scenario_idx[i] = scenario_idx[i]
+                    self.bg.load_scenario(i)
 
         else:
-            self.bg.Fire = False
+            self.bg.eva_draw.Fire = [False for _ in range(5)]
             self.bg.gl_draw.show_route = False
             self.bg.eva_draw.path_route = None
 
@@ -246,6 +256,12 @@ class get_data:
     def change_Watch_Floor(self):
         self.bg.gl_draw.Watch_floor = self.ui.WatchFloor_comboBox.currentIndex()
         self.bg.eva_draw.Watch_floor = self.bg.gl_draw.Watch_floor
+
+    def change_N_min(self):
+        if self.ui.N_min_later_combobox.currentIndex() <= 3600:
+            self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex() * 60
+            if self.bg.eva_draw.Fire:
+                self.bg.set_danger_level()
 
     def thread_end(self, object):
         self.thread_event_set_ui()
