@@ -94,7 +94,7 @@ class eva_draw:
             'hallway00': [-0.263, 0.546],
             'hallway01': [-0.263, 0.10675],
 
-            'stair0': [0.00, 0.73],
+            'stair0': [-0.084, 0.73],
             'escape00': [0.0665, -0.7325],
 
             # 2 Floor room ###########################################################################
@@ -420,10 +420,11 @@ class eva_draw:
                                                         self.node_point[center_node][0] - 1, self.node_point[end_node][1] - 0.07, end_height_point,
                                                         Thickness, size)
                         else:
-                            height_point = self.height * int(self.path_route[idx][-1:])
-                            self.draw_Arrow(self.node_point[self.path_route[idx]][0], self.node_point[self.path_route[idx]][1], height_point,
-                                            self.node_point[self.path_route[idx + 1]][0], self.node_point[self.path_route[idx + 1]][1], height_point,
-                                            Thickness, size)
+                            if int(self.path_route[idx][-1]) == self.Watch_floor:
+                                height_point = self.height * int(self.path_route[idx][-1:])
+                                self.draw_Arrow(self.node_point[self.path_route[idx]][0], self.node_point[self.path_route[idx]][1], height_point,
+                                                self.node_point[self.path_route[idx + 1]][0], self.node_point[self.path_route[idx + 1]][1], height_point,
+                                                Thickness, size)
 
 
     def draw_Danger_Floor_2D(self):

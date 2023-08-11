@@ -69,6 +69,12 @@ class build_gl(QOpenGLWidget):
         elif self.ui.WatchMode2.isChecked():
             self.Watch_Mode = 2
 
+        if self.ui.watch_present.isChecked():
+            self.Watch_Present = True
+        else:
+            self.Watch_Present = False
+
+
     def load_scenario(self, floor):
         Dir_path = 'C:/Users/iyaso/PycharmProjects/test.csv'#'D:/.2. 4차년도 국토부/data/'
         #File_path = os.path.join(Dir_path, 'M' + format(self.scenario[floor], '05') + '.csv')
@@ -101,56 +107,47 @@ class build_gl(QOpenGLWidget):
                                     break
                 scenario_data.append(frame_datas)
         self.future_data[floor] = scenario_data.copy()
-        self.set_danger_level()
 
-    def set_danger_level(self):
-        for floor, floor_future_data in enumerate(self.future_data):
-            if len(floor_future_data) != 0:
-                time = self.set_time + 1 + self.time_gap
-                if time >= len(floor_future_data[1:]):
-                    time = len(floor_future_data[1:]) - 1
+    def set_danger_level(self, floor, head, data):
+        if len(data) != 0:
+            room1 = [head[0:7], data[0:7]]
+            room2 = [head[7:13], data[7:13]]
+            room3 = [head[13:19], data[13:19]]
+            room4 = [head[19:25], data[19:25]]
+            room5 = [head[25:31], data[25:31]]
+            room6 = [head[31:37], data[31:37]]
+            room7 = [head[37:44], data[37:44]]
+            floor_data = [room1, room2, room3, room4, room5, room6, room7]
 
-                head = floor_future_data[0][1:].copy()
-                data = floor_future_data[time][1:].copy()
-                room1 = [head[0:7], data[0:7]]
-                room2 = [head[7:13], data[7:13]]
-                room3 = [head[13:19], data[13:19]]
-                room4 = [head[19:25], data[19:25]]
-                room5 = [head[25:31], data[25:31]]
-                room6 = [head[31:37], data[31:37]]
-                room7 = [head[37:44], data[37:44]]
-                floor_data = [room1, room2, room3, room4, room5, room6, room7]
+            for room, room_data in enumerate(floor_data):
+                room_danger_level = [[0, 'temp', 20.0], [0, 'gas', 0.0]]
+                for i in range(len(room_data[0])):
+                    sensor_danger_level = [0, '', 0.0]
+                    if room_data[0][i] == 'temp':
+                        if float(room_data[1][i]) >= 70.0:
+                            sensor_danger_level = [2, 'temp', float(room_data[1][i])]
+                        elif float(room_data[1][i]) >= 50.0:
+                            sensor_danger_level = [1, 'temp', float(room_data[1][i])]
+                        else:
+                            sensor_danger_level = [0, 'temp', float(room_data[1][i])]
+                    elif room_data[0][i] == 'gas':
+                        if float(room_data[1][i]) >= 0.15:
+                            sensor_danger_level = [2, 'gas', float(room_data[1][i])]
+                        elif float(room_data[1][i]) >= 0.10:
+                            sensor_danger_level = [1, 'gas', float(room_data[1][i])]
+                        else:
+                            sensor_danger_level = [0, 'gas', float(room_data[1][i])]
+                    sensor_type = 0 if sensor_danger_level[1] == 'temp' else 1
+                    if room_danger_level[sensor_type][0] <= sensor_danger_level[0]:
+                        room_danger_level[sensor_type] = sensor_danger_level
 
-                for room, room_data in enumerate(floor_data):
-                    room_danger_level = [[0, 'temp', 20.0], [0, 'gas', 0.0]]
-                    for i in range(len(room_data[0])):
-                        sensor_danger_level = [0, '', 0.0]
-                        if room_data[0][i] == 'Sensor Temperature':
-                            if float(room_data[1][i]) >= 70.0:
-                                sensor_danger_level = [2, 'temp', float(room_data[1][i])]
-                            elif float(room_data[1][i]) >= 30.0:
-                                sensor_danger_level = [1, 'temp', float(room_data[1][i])]
-                            else:
-                                sensor_danger_level = [0, 'temp', float(room_data[1][i])]
-                        elif room_data[0][i] == 'Sensor Obscuration':
-                            if float(room_data[1][i]) >= 0.15:
-                                sensor_danger_level = [2, 'gas', float(room_data[1][i])]
-                                gas = float(room_data[1][i])
-                            elif float(room_data[1][i]) >= 0.01:
-                                sensor_danger_level = [1, 'gas', float(room_data[1][i])]
-                            else:
-                                sensor_danger_level = [0, 'gas', float(room_data[1][i])]
-                        sensor_type = 0 if sensor_danger_level[1] == 'temp' else 1
-                        if room_danger_level[sensor_type][0] <= sensor_danger_level[0]:
-                            room_danger_level[sensor_type] = sensor_danger_level
-
-                    temp_red = (room_danger_level[0][2] / 100.0) if (room_danger_level[0][2] <= 100) else 1.0
-                    gas_red = room_danger_level[1][2]
-                    red_value = max(temp_red, gas_red) * 2.0
-                    if red_value <= 1.0:
-                        self.gl_draw.bottom_color[floor + 1][room] = [red_value, 1.0, 0.0, 1.0]
-                    else:
-                        self.gl_draw.bottom_color[floor + 1][room] = [1.0, 1.0 - (red_value - 1.0), 0.0, 1.0]
+                temp_red = (room_danger_level[0][2] / 100.0) if (room_danger_level[0][2] <= 100) else 1.0
+                gas_red = room_danger_level[1][2]
+                red_value = max(temp_red, gas_red) * 2.0
+                if red_value <= 1.0:
+                    self.gl_draw.bottom_color[floor + 1][room] = [red_value, 1.0, 0.0, 1.0]
+                else:
+                    self.gl_draw.bottom_color[floor + 1][room] = [1.0, 2.0 - red_value, 0.0, 1.0]
 
     def resizeGL(self, w, h):
         glGetError()

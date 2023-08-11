@@ -16,7 +16,8 @@ class db_thread(QThread):
     def __init__(self):
         super().__init__()
 
-        self.floor_idx_list = []
+        self.head = [[], [], [], [], [], []]
+        self.floor_idx_list = [[], [], [], [], [], []]
         self.temp_index = [[], [], [], [], [], []]
         self.gas_index = [[], [], [], [], [], []]
 
@@ -104,7 +105,8 @@ class db_thread(QThread):
 
             self.cur.execute(sql)
             result = self.cur.fetchall()
-            for idx, type in enumerate(result[0]):
+            head = list(result[0]).copy()
+            for idx, type in enumerate(head):
                 this_floor = 0
                 for floor, floor_nodes in enumerate(self.floor_idx_list):
                     if idx in floor_nodes:
@@ -113,6 +115,7 @@ class db_thread(QThread):
                     self.temp_index[this_floor].append(idx)
                 if type == 'gas':
                     self.gas_index[this_floor].append(idx)
+            self.head = [head[1:12], head[12:61], head[61:110], head[110:159], head[159:208], head[208:210]]
 
             all_temp_datas = []
             all_gas_datas = []
@@ -233,6 +236,16 @@ class get_data:
                 if self.bg.scenario_idx[i] != scenario_idx[i]:
                     self.bg.scenario_idx[i] = scenario_idx[i]
                     self.bg.load_scenario(i)
+                    if not self.bg.Watch_Present:
+                        time = self.bg.set_time + 1 + self.bg.time_gap
+                        if time >= len(self.bg.future_data[i][1:]):
+                            time = len(self.bg.future_data[i][1:]) - 1
+                        self.bg.set_danger_level(i, self.db_worker.head[i+1][:-1], self.bg.future_data[i][time][1:])
+            if self.bg.Watch_Present:
+                for floor in range(4):
+
+                self.bg.set_danger_level(i, self.db_worker.head[i+1][:-1], self.bg.future_data[i][time][1:])
+
 
         else:
             self.bg.eva_draw.Fire = [False for _ in range(5)]
@@ -249,19 +262,40 @@ class get_data:
         elif self.ui.WatchMode2.isChecked():
             self.bg.Watch_Mode = 2
 
-    def change_Start_Point(self):
+    def change_Start_Floor(self):
         self.bg.eva_draw.Start_floor = self.ui.StartFloor_comboBox.currentIndex()
+        if self.bg.eva_draw.Start_floor == 0:
+            self.ui.StartRoom_comboBox.clear()
+            for i in range(2):
+                self.ui.StartRoom_comboBox.addItem(str(i + 1))
+        else:
+            self.ui.StartRoom_comboBox.clear()
+            for i in range(7):
+                self.ui.StartRoom_comboBox.addItem(str(i + 1))
+        self.bg.eva_draw.Start_room = 0
+
+    def change_Start_Room(self):
         self.bg.eva_draw.Start_room = self.ui.StartRoom_comboBox.currentIndex()
 
     def change_Watch_Floor(self):
         self.bg.gl_draw.Watch_floor = self.ui.WatchFloor_comboBox.currentIndex()
         self.bg.eva_draw.Watch_floor = self.bg.gl_draw.Watch_floor
 
+    def change_N_Mode(self):
+        if self.ui.watch_present.isChecked():
+            self.ui.N_min_later_combobox.setEnabled(False)
+        else:
+            self.ui.N_min_later_combobox.setEnabled(True)
+
     def change_N_min(self):
-        if self.ui.N_min_later_combobox.currentIndex() <= 3600:
+        if self.ui.N_min_later_combobox.currentIndex() <= 60:
             self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex() * 60
-            if self.bg.eva_draw.Fire:
-                self.bg.set_danger_level()
+            for floor, danger in enumerate(self.bg.eva_draw.Fire):
+                if danger and (floor != 0):
+                    time = self.bg.set_time + 1 + self.bg.time_gap
+                    if time >= len(self.bg.future_data[floor - 1][1:]):
+                        time = len(self.bg.future_data[floor - 1][1:]) - 1
+                    self.bg.set_danger_level(floor - 1, self.db_worker.head[floor][:-1], self.bg.future_data[floor - 1][time][1:])
 
     def thread_end(self, object):
         self.thread_event_set_ui()

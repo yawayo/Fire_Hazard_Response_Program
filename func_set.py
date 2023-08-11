@@ -43,8 +43,9 @@ class func_set:
         self.ui.WatchMode1.clicked.connect(self.gd.change_Watch_Mode)
         self.ui.WatchMode2.clicked.connect(self.gd.change_Watch_Mode)
         self.ui.WatchFloor_comboBox.currentIndexChanged.connect(self.gd.change_Watch_Floor)
-        self.ui.StartFloor_comboBox.currentIndexChanged.connect(self.gd.change_Start_Point)
-        self.ui.StartRoom_comboBox.currentIndexChanged.connect(self.gd.change_Start_Point)
+        self.ui.StartFloor_comboBox.currentIndexChanged.connect(self.gd.change_Start_Floor)
+        self.ui.StartRoom_comboBox.currentIndexChanged.connect(self.gd.change_Start_Room)
+        self.ui.watch_present.clicked.connect(self.gd.change_N_Mode)
         self.ui.N_min_later_combobox.currentIndexChanged.connect(self.gd.change_N_min)
 
     def resizeWidget(self):

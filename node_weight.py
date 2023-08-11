@@ -159,7 +159,7 @@ class weight_checker:
             'stair5': {'stair4': 2, 'escape01': 1},
 
             # Escape Node2
-            'escape01': {'stair5': 10},
+            'escape01': {'stair5': 30},
         }
         
         self.map = {
