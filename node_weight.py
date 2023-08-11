@@ -17,7 +17,7 @@ class weight_checker:
 
             # hallway
             'hallway00': {'hallway01': 1, 'stair0': 1},
-            'hallway01': {'room00': 1, 'room01': 1, 'room02': 1},
+            'hallway01': {'hallway00': 1, 'room00': 1, 'room01': 1, 'room02': 1},
 
             # Stair
             'stair0': {'hallway00': 1, 'stair1': 10},
@@ -116,7 +116,7 @@ class weight_checker:
             'hallway72': {'room34': 1, 'hallway71': 1, 'hallway73': 1},
             'hallway73': {'hallway72': 1, 'hallway74': 1},
             'hallway74': {'room35': 1, 'hallway73': 1, 'hallway75': 1},
-            'hallway75': {'room16': 1, 'hallway74': 1},
+            'hallway75': {'room36': 1, 'hallway74': 1},
 
             # Stair
             'stair3': {'stair2': 2, 'hallway68': 1, 'stair4': 10},
@@ -156,7 +156,7 @@ class weight_checker:
             # 6 Floor ###########################################################################
 
             # Stair
-            'stair5': {'stair4': 2, 'escape01': 1},
+            'stair5': {'stair4': 2, 'escape01': 30},
 
             # Escape Node2
             'escape01': {'stair5': 30},
