@@ -11,6 +11,10 @@ class MainWindow(QMainWindow):
         self.ui = loadUi("ui/system_ui.ui", self)
         self.setWindowIcon(QIcon("icon/hbrain.png"))
         self.fs = func_set(self.ui)
+        #
+        # sshFile = "ui/qdarkstyle/style.qss"
+        # with open(sshFile, "r") as fh:
+        #     self.setStyleSheet(fh.read())
 
     def resizeEvent(self, event):
         self.fs.resizeWidget()

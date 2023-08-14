@@ -20,10 +20,10 @@ class weight_checker:
             'hallway01': {'hallway00': 1, 'room00': 1, 'room01': 1, 'room02': 1},
 
             # Stair
-            'stair0': {'hallway00': 1, 'stair1': 10},
+            'stair0': {'hallway00': 1, 'stair1': 1},
 
             # Escape Node
-            'escape00': {'room02': 10},
+            'escape00': {'room02': 1},
 
             # 2 Floor ###########################################################################
 
@@ -55,7 +55,7 @@ class weight_checker:
             'hallway35': {'room16': 1, 'hallway34': 1},
 
             # Stair
-            'stair1': {'stair0': 2, 'hallway28': 1, 'stair2': 10},
+            'stair1': {'stair0': 1, 'hallway28': 1, 'stair2': 1},
 
             # 3 Floor ###########################################################################
 
@@ -87,7 +87,7 @@ class weight_checker:
             'hallway55': {'room26': 1, 'hallway54': 1},
 
             # Stair
-            'stair2': {'stair1': 2, 'hallway48': 1, 'stair3': 10},
+            'stair2': {'stair1': 1, 'hallway48': 1, 'stair3': 1},
 
             # 4 Floor ###########################################################################
 
@@ -119,7 +119,7 @@ class weight_checker:
             'hallway75': {'room36': 1, 'hallway74': 1},
 
             # Stair
-            'stair3': {'stair2': 2, 'hallway68': 1, 'stair4': 10},
+            'stair3': {'stair2': 1, 'hallway68': 1, 'stair4': 1},
 
             # 5 Floor ###########################################################################
 
@@ -156,10 +156,10 @@ class weight_checker:
             # 6 Floor ###########################################################################
 
             # Stair
-            'stair5': {'stair4': 2, 'escape01': 30},
+            'stair5': {'stair4': 1, 'escape01': 50},
 
             # Escape Node2
-            'escape01': {'stair5': 30},
+            'escape01': {'stair5': 1},
         }
         
         self.map = {
@@ -406,6 +406,11 @@ class weight_checker:
                       [0]]
 
     def set_node_weight(self, danger_temp_idx, danger_gas_idx, temp_idx, gas_idx):
+
+        for keys in self.node.keys():
+            for weight_node in self.node[keys]:
+                self.node[keys][weight_node] = 1
+        self.node['stair5']['escape01'] = 50
 
         danger_node = [[], [], [], [], [], []]
         for floor, (temp_node, gas_node) in enumerate(zip(danger_temp_idx, danger_gas_idx)):

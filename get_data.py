@@ -260,8 +260,8 @@ class get_data:
             if self.bg.Watch_Present:
                 for floor in range(4):
                     self.bg.set_danger_level(floor, self.db_worker.head[floor + 1][:-1], total_datas[-1][floor + 2][:-1])
-                self.wc.set_node_weight(self.ad.temp_Fire_idx, self.ad.gas_Fire_idx, self.db_worker.temp_index, self.db_worker.gas_index)
 
+                self.wc.set_node_weight(self.ad.temp_Fire_idx, self.ad.gas_Fire_idx, self.db_worker.temp_index, self.db_worker.gas_index)
                 start_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
 
                 self.bg.eva_draw.path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
@@ -299,8 +299,77 @@ class get_data:
                 self.ui.StartRoom_comboBox.addItem(str(i + 1))
         self.bg.eva_draw.Start_room = 0
 
+        if not self.bg.Watch_Present:
+            if self.ui.N_min_later_combobox.currentIndex() <= 60:
+                self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex() * 60
+                time = self.bg.set_time + 1 + self.bg.time_gap
+                if time >= 3600:
+                    time = 3600
+
+                temp_idx = [[], [], [], [], [], []]
+                gas_idx = [[], [], [], [], [], []]
+
+                for floor, danger in enumerate(self.bg.eva_draw.Fire):
+                    if danger and (floor != 0):
+                        self.bg.set_danger_level(floor - 1, self.db_worker.head[floor][:-1], self.bg.future_data[floor - 1][time][1:])
+                        temp_count = 0
+                        gas_count = 0
+                        for type, value in zip(self.db_worker.head[floor][:-1], self.bg.future_data[floor - 1][time][1:]):
+                            if type == 'temp':
+                                if float(value) >= 70.0:
+                                    temp_idx[floor].append(temp_count)
+                                temp_count += 1
+                            elif type == 'gas':
+                                if float(value) >= 0.15:
+                                    gas_idx[floor].append(gas_count)
+                                gas_count += 1
+
+            self.wc.set_node_weight(temp_idx, gas_idx, self.db_worker.temp_index, self.db_worker.gas_index)
+            start_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
+            self.bg.eva_draw.path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
+
+            path_output = 'path : '
+            for point in self.bg.eva_draw.path_route:
+                path_output += point + ' -> '
+            self.react_log(path_output[:-3])
+
     def change_Start_Room(self):
-        self.bg.eva_draw.Start_room = self.ui.StartRoom_comboBox.currentIndex()
+        if self.ui.StartRoom_comboBox.currentIndex() >= 0:
+            self.bg.eva_draw.Start_room = self.ui.StartRoom_comboBox.currentIndex()
+
+        if not self.bg.Watch_Present:
+            if self.ui.N_min_later_combobox.currentIndex() <= 60:
+                self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex() * 60
+                time = self.bg.set_time + 1 + self.bg.time_gap
+                if time >= 3600:
+                    time = 3600
+
+                temp_idx = [[], [], [], [], [], []]
+                gas_idx = [[], [], [], [], [], []]
+
+                for floor, danger in enumerate(self.bg.eva_draw.Fire):
+                    if danger and (floor != 0):
+                        self.bg.set_danger_level(floor - 1, self.db_worker.head[floor][:-1], self.bg.future_data[floor - 1][time][1:])
+                        temp_count = 0
+                        gas_count = 0
+                        for type, value in zip(self.db_worker.head[floor][:-1], self.bg.future_data[floor - 1][time][1:]):
+                            if type == 'temp':
+                                if float(value) >= 70.0:
+                                    temp_idx[floor].append(temp_count)
+                                temp_count += 1
+                            elif type == 'gas':
+                                if float(value) >= 0.15:
+                                    gas_idx[floor].append(gas_count)
+                                gas_count += 1
+
+            self.wc.set_node_weight(temp_idx, gas_idx, self.db_worker.temp_index, self.db_worker.gas_index)
+            start_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
+            self.bg.eva_draw.path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
+
+            path_output = 'path : '
+            for point in self.bg.eva_draw.path_route:
+                path_output += point + ' -> '
+            self.react_log(path_output[:-3])
 
     def change_Watch_Floor(self):
         self.bg.gl_draw.Watch_floor = self.ui.WatchFloor_comboBox.currentIndex()
@@ -320,25 +389,44 @@ class get_data:
                     time = self.bg.set_time + 1 + self.bg.time_gap
                     if time >= len(self.bg.future_data[floor - 1][1:]):
                         time = len(self.bg.future_data[floor - 1][1:]) - 1
-                    self.bg.set_danger_level(floor - 1, self.db_worker.head[floor][:-1], self.bg.future_data[floor - 1][time][1:])
+                    if len(self.bg.future_data[floor - 1]) != 0:
+                        self.bg.set_danger_level(floor - 1, self.db_worker.head[floor][:-1], self.bg.future_data[floor - 1][time][1:])
+
 
     def change_N_min(self):
-        #
-        # elif not self.bg.Watch_Present:
-        # time = self.bg.set_time + 1 + self.bg.time_gap
-        # if time >= len(self.bg.future_data[0][1:]):
-        #     time = len(self.bg.future_data[0][1:]) - 1
-        # for floor, datas in enumerate(self.bg.future_data):
-        #     if len(datas) != 0:
-        #         self.bg.set_danger_level(floor, self.db_worker.head[floor + 1][:-1], datas[time][1:])
-        if self.ui.N_min_later_combobox.currentIndex() <= 60:
-            self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex() * 60
-            for floor, danger in enumerate(self.bg.eva_draw.Fire):
-                if danger and (floor != 0):
-                    time = self.bg.set_time + 1 + self.bg.time_gap
-                    if time >= len(self.bg.future_data[floor - 1][1:]):
-                        time = len(self.bg.future_data[floor - 1][1:]) - 1
-                    self.bg.set_danger_level(floor - 1, self.db_worker.head[floor][:-1], self.bg.future_data[floor - 1][time][1:])
+        if not self.bg.Watch_Present:
+            if self.ui.N_min_later_combobox.currentIndex() <= 60:
+                self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex() * 60
+                time = self.bg.set_time + 1 + self.bg.time_gap
+                if time >= 3600:
+                    time = 3600
+
+                temp_idx = [[], [], [], [], [], []]
+                gas_idx = [[], [], [], [], [], []]
+
+                for floor, danger in enumerate(self.bg.eva_draw.Fire):
+                    if danger and (floor != 0):
+                        self.bg.set_danger_level(floor - 1, self.db_worker.head[floor][:-1], self.bg.future_data[floor - 1][time][1:])
+                        temp_count = 0
+                        gas_count = 0
+                        for type, value in zip(self.db_worker.head[floor][:-1], self.bg.future_data[floor - 1][time][1:]):
+                            if type == 'temp':
+                                if float(value) >= 70.0:
+                                    temp_idx[floor].append(temp_count)
+                                temp_count += 1
+                            elif type == 'gas':
+                                if float(value) >= 0.15:
+                                    gas_idx[floor].append(gas_count)
+                                gas_count += 1
+
+            self.wc.set_node_weight(temp_idx, gas_idx, self.db_worker.temp_index, self.db_worker.gas_index)
+            start_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
+            self.bg.eva_draw.path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
+
+            path_output = 'path : '
+            for point in self.bg.eva_draw.path_route:
+                path_output += point + ' -> '
+            self.react_log(path_output[:-3])
 
     def thread_end(self, object):
         self.thread_event_set_ui()
