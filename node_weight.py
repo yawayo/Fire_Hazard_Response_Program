@@ -223,7 +223,7 @@ class weight_checker:
             '55': ['room16', 'hallway35'],
             '56': ['hallway22'],
             '57': ['hallway25'],
-            '58': ['hallway27', 'stair1'],
+            '58': ['hallway27'],
             '59': ['hallway32'],
             '60': ['stair1'],
 
@@ -274,7 +274,7 @@ class weight_checker:
             '104': ['room26', 'hallway55'],
             '105': ['hallway42'],
             '106': ['hallway45'],
-            '107': ['hallway47', 'stair2'],
+            '107': ['hallway47'],
             '108': ['hallway52'],
             '109': ['stair2'],
 
@@ -332,7 +332,7 @@ class weight_checker:
 
             '154': ['hallway62'],
             '155': ['hallway65'],
-            '156': ['hallway67', 'stair3'],
+            '156': ['hallway67'],
             '157': ['hallway72'],
             '158': ['stair3'],
 
@@ -390,7 +390,7 @@ class weight_checker:
 
             '203': ['hallway82'],
             '204': ['hallway85'],
-            '205': ['hallway87', 'stair4'],
+            '205': ['hallway87'],
             '206': ['hallway92'],
             '207': ['stair4'],
 

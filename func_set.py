@@ -42,6 +42,7 @@ class func_set:
         self.ui.WatchMode0.clicked.connect(self.gd.change_Watch_Mode)
         self.ui.WatchMode1.clicked.connect(self.gd.change_Watch_Mode)
         self.ui.WatchMode2.clicked.connect(self.gd.change_Watch_Mode)
+        self.ui.WatchMode_Highlight.clicked.connect(self.gd.change_Watch_Mode)
         self.ui.WatchFloor_comboBox.currentIndexChanged.connect(self.gd.change_Watch_Floor)
         self.ui.StartFloor_comboBox.currentIndexChanged.connect(self.gd.change_Start_Floor)
         self.ui.StartRoom_comboBox.currentIndexChanged.connect(self.gd.change_Start_Room)

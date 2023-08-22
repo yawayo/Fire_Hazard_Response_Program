@@ -36,11 +36,11 @@ class gl_draw:
         self.draw_Floor_Bottom(self.height * 4, 4)
         glPopMatrix()
         glPushMatrix()
-        self.draw_Stairs(self.height * 0, self.height, 10)
-        self.draw_Stairs(self.height * 1, self.height, 10)
-        self.draw_Stairs(self.height * 2, self.height, 10)
-        self.draw_Stairs(self.height * 3, self.height, 10)
-        self.draw_Stairs(self.height * 4, self.height, 10)
+        self.draw_Stairs(self.height * 0, self.height, 10, 0)
+        self.draw_Stairs(self.height * 1, self.height, 10, 1)
+        self.draw_Stairs(self.height * 2, self.height, 10, 2)
+        self.draw_Stairs(self.height * 3, self.height, 10, 3)
+        self.draw_Stairs(self.height * 4, self.height, 10, 4)
 
         self.draw_1F_Back_Wall(self.height)
         self.draw_Back_Wall(self.height * 1, self.height)
@@ -64,14 +64,14 @@ class gl_draw:
 
         self.draw_EV_3D(self.height * self.Watch_floor, self.height)
         if self.Watch_floor == 0:
-            self.draw_Stairs(self.height * 0, self.height, 10)
+            self.draw_Stairs(self.height * 0, self.height, 10, self.Watch_floor)
             self.draw_1F_Bottom()
             self.draw_1F_Back_Wall(self.height)
             self.draw_1F_Front_Wall(self.height)
             #self.draw_1F_Room_Wall(self.height)
         else:
-            self.draw_Stairs(self.height * (self.Watch_floor - 1), self.height, 10)
-            self.draw_Stairs(self.height * self.Watch_floor, self.height, 10)
+            self.draw_Stairs(self.height * (self.Watch_floor - 1), self.height, 10, self.Watch_floor - 1)
+            self.draw_Stairs(self.height * self.Watch_floor, self.height, 10, self.Watch_floor)
             self.draw_Floor_Bottom(self.height * self.Watch_floor, self.Watch_floor)
             self.draw_Back_Wall(self.height * self.Watch_floor, self.height)
             # self.draw_Room_Wall(self.height * self.Watch_floor)
@@ -87,7 +87,7 @@ class gl_draw:
         else:
             self.draw_Floor_Bottom(0.0, self.Watch_floor)
 
-        self.draw_Stairs(0.0, 0.0, 10)
+        self.draw_Stairs(0.0, 0.0, 10, self.Watch_floor)
         self.draw_EV_2D()
 
         glPopMatrix()
@@ -96,18 +96,26 @@ class gl_draw:
         self.base_color = [0.1, 0.1, 0.1, 1.0]
         self.pillar_color = [0.7, 0.7, 0.7, 1.0]
         self.ev_color = [0.4, 0.4, 0.4, 1.0]
-        self.bottom_color = [[[0.0, 1.0, 0.0, 1.0]]]
+        self.bottom_color = [[[0.0, 1.0, 0.0], [0.0, 1.0, 0.0]]]
         for _ in range(4):
             floor_color_set = []
             for _ in range(7):
-                floor_color_set.append([0.0, 1.0, 0.0, 1.0])
+                floor_color_set.append([0.0, 1.0, 0.0])
             self.bottom_color.append(floor_color_set)
-
-        self.hallway_color = [0.5, 0.5, 0.5, 1.0]
+        self.hallway_color = [[[0.0, 1.0, 0.0], [0.0, 1.0, 0.0]]]
+        for _ in range(4):
+            floor_color_set = []
+            for _ in range(4):
+                floor_color_set.append([0.0, 1.0, 0.0])
+            self.hallway_color.append(floor_color_set)
+        self.terrace_bottom_color = [0.5, 0.5, 0.5]
         self.back_wall_color = [0.3, 0.3, 0.3, 1.0]
         self.front_wall_color = [0.6, 0.6, 0.6, 0.4]
         self.room_wall_color = [0.6, 0.6, 0.6, 0.8]
-        self.stairs_color = [0.5, 0.5, 0.5, 1.0]
+        self.stairs_color = []
+        for _ in range(6):
+            self.stairs_color.append([0.0, 1.0, 0.0])
+        self.Transparency = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
     def draw_Base(self, x, y):
         bottom = [[x, y, 0.0],
@@ -176,103 +184,143 @@ class gl_draw:
     def draw_1F_Bottom(self):
         dif_base = 0.001
         all_room_point = []
-        room_01 = [[-0.11, 0.46, dif_base],
-                   [-0.11, -0.07, dif_base],
-                   [-0.06, -0.18, dif_base],
-                   [0.53, 0.11, dif_base],
-                   [0.53, 0.46, dif_base]]
-        room_02 = [[-0.87, -0.25, dif_base],
-                   [-0.87, -0.58, dif_base],
-                   [-0.35, -0.32, dif_base],
-                   [-0.478, -0.045, dif_base]]
-        room_03 = [[-0.87, 0.02, dif_base],
-                   [-0.87, -0.25, dif_base],
-                   [-0.635, -0.127, dif_base],
-                   [-0.745, 0.095, dif_base]]
-        room_04 = [[-0.87, 0.35, dif_base],
-                   [-0.87, 0.02, dif_base],
-                   [-0.745, 0.095, dif_base]]
-        room_05 = [[-0.35, -0.32, dif_base],
-                   [-0.273, -0.485, dif_base],
-                   [0.017, -0.345, dif_base],
-                   [-0.06, -0.18, dif_base]]
-        all_room_point.append(room_01)
-        all_room_point.append(room_02)
-        all_room_point.append(room_03)
-        all_room_point.append(room_04)
-        all_room_point.append(room_05)
+        room_01_1 = [[-0.17, 0.46, dif_base],
+                     [-0.17, 0.10, dif_base],
+                     [-0.06, -0.18, dif_base],
+                     [0.53, 0.11, dif_base],
+                     [0.53, 0.46, dif_base]] # 관제실
+        room_01_2 = [[-0.17, 0.66, dif_base],
+                     [-0.17, 0.46, dif_base],
+                     [0.17, 0.46, dif_base],
+                     [0.17, 0.66, dif_base]]
+        room_02_1 = [[-0.87, -0.25, dif_base],
+                     [-0.87, -0.58, dif_base],
+                     [-0.35, -0.32, dif_base],
+                     [-0.478, -0.045, dif_base]] # 관리실
+        room_02_2 = [[-0.87, 0.095, dif_base],
+                     [-0.87, -0.25, dif_base],
+                     [-0.64, -0.13, dif_base],
+                     [-0.745, 0.095, dif_base]]
+        all_room_point.append([room_01_1, room_01_2])
+        all_room_point.append([room_02_1, room_02_2])
 
-        all_another_point = []
+        all_room_area = []
+        room_01_area = [[-0.17, 0.66, dif_base],
+                        [-0.17, 0.10, dif_base],
+                        [-0.06, -0.18, dif_base],
+                        [0.53, 0.11, dif_base],
+                        [0.53, 0.46, dif_base],
+                        [0.17, 0.46, dif_base],
+                        [0.17, 0.66, dif_base]]
+        room_02_area = [[-0.87, 0.095, dif_base],
+                        [-0.87, -0.58, dif_base],
+                        [-0.35, -0.32, dif_base],
+                        [-0.478, -0.045, dif_base],
+                        [-0.64, -0.13, dif_base],
+                        [-0.745, 0.095, dif_base]]
+        door_area = [[-0.35, -0.32, dif_base],
+                     [-0.273, -0.485, dif_base],
+                     [0.017, -0.345, dif_base],
+                     [-0.06, -0.18, dif_base]]
+        all_room_area.append(room_01_area)
+        all_room_area.append(room_02_area)
+        all_room_area.append(door_area)
 
+        all_hallway_point = []
         hallway_01 = [[-0.478, -0.045, dif_base],
                       [-0.35, -0.32, dif_base],
                       [-0.06, -0.18, dif_base],
-                      [-0.11, -0.07, dif_base]]
+                      [-0.17, 0.10, dif_base]]
         hallway_02 = [[-0.87, 0.35, dif_base],
-                      [-0.635, -0.127, dif_base],
+                      [-0.64, -0.13, dif_base],
                       [-0.478, -0.045, dif_base],
-                      [-0.478, 0.36, dif_base],
+                      [-0.17, 0.10, dif_base],
+                      [-0.17, 0.37, dif_base],
                       [-0.81, 0.37, dif_base]]
-        hallway_03 = [[-0.478, 0.36, dif_base],
-                      [-0.478, -0.045, dif_base],
-                      [-0.11, -0.07, dif_base],
-                      [-0.11, 0.36, dif_base]]
-        hallway_04 = [[-0.81, 0.50, dif_base],
-                      [-0.81, 0.36, dif_base],
-                      [-0.11, 0.36, dif_base],
-                      [-0.11, 0.50, dif_base]]
-        hallway_05 = [[-0.81, 0.80, dif_base],
-                      [-0.81, 0.46, dif_base],
-                      [-0.17, 0.46, dif_base],
+        hallway_03 = [[-0.81, 0.50, dif_base],
+                      [-0.81, 0.37, dif_base],
+                      [-0.17, 0.37, dif_base],
+                      [-0.17, 0.50, dif_base]]
+        hallway_04 = [[-0.51, 0.80, dif_base],
+                      [-0.51, 0.50, dif_base],
+                      [-0.17, 0.50, dif_base],
                       [-0.17, 0.80, dif_base]]
-        stairs = [[-0.17, 0.90, dif_base],
-                  [-0.17, 0.46, dif_base],
-                  [0.17, 0.46, dif_base],
-                  [0.17, 0.90, dif_base]]
+        hallway_05 = [[-0.87, 0.35, dif_base],
+                      [-0.87, 0.095, dif_base],
+                      [-0.745, 0.095, dif_base]]
+        door = [[-0.35, -0.32, dif_base],
+                [-0.273, -0.485, dif_base],
+                [0.017, -0.345, dif_base],
+                [-0.06, -0.18, dif_base]]
 
-        all_another_point.append(hallway_01)
-        all_another_point.append(hallway_02)
-        all_another_point.append(hallway_03)
-        all_another_point.append(hallway_04)
-        all_another_point.append(hallway_05)
+        all_hallway_point.append([hallway_01, hallway_02, hallway_03, hallway_04, hallway_05])
+        all_hallway_point.append([door])
+
+        all_another_point = []
+
+        stairs = [[-0.17, 0.90, dif_base],
+                  [-0.17, 0.66, dif_base],
+                  [0.17, 0.66, dif_base],
+                  [0.17, 0.90, dif_base]]
+        ev = [[-0.81, 0.80, dif_base],
+              [-0.81, 0.50, dif_base],
+              [-0.51, 0.50, dif_base],
+              [-0.51, 0.80, dif_base]]
         all_another_point.append(stairs)
+        all_another_point.append(ev)
 
         another_area = [[-0.87, 0.35, dif_base],
-                        [-0.635, -0.127, dif_base],
-                        [-0.478, -0.045, dif_base],
+                        [-0.87, -0.58, dif_base],
                         [-0.35, -0.32, dif_base],
                         [-0.06, -0.18, dif_base],
-                        [-0.11, -0.07, dif_base],
-                        [-0.11, 0.46, dif_base],
+                        [0.53, 0.11, dif_base],
+                        [0.53, 0.46, dif_base],
                         [0.17, 0.46, dif_base],
-                        [0.17, 0.90, dif_base],
-                        [-0.17, 0.90, dif_base],
+                        [0.17, 0.66, dif_base],
+                        [-0.17, 0.66, dif_base],
                         [-0.17, 0.80, dif_base],
                         [-0.51, 0.80, dif_base],
                         [-0.51, 0.50, dif_base],
                         [-0.81, 0.50, dif_base],
                         [-0.81, 0.37, dif_base]]
 
-        glColor(self.bottom_color[0][0][0], self.bottom_color[0][0][1], self.bottom_color[0][0][2], self.bottom_color[0][0][3])
-        for room in all_room_point:
-            glBegin(GL_POLYGON)
-            for point in room:
-                glVertex3fv(point)
-            glEnd()
-        glColor(self.hallway_color[0], self.hallway_color[1], self.hallway_color[2], self.hallway_color[3])
-        for room in all_another_point:
-            glBegin(GL_POLYGON)
-            for point in room:
-                glVertex3fv(point)
-            glEnd()
+        for idx, rooms in enumerate(all_room_point):
+            glColor(self.bottom_color[0][idx][0], self.bottom_color[0][idx][1], self.bottom_color[0][idx][2], self.Transparency[0])
+            for room in rooms:
+                glBegin(GL_POLYGON)
+                for point in room:
+                    glVertex3fv(point)
+                glEnd()
+
+        for idx, spaces in enumerate(all_hallway_point):
+            glColor(self.hallway_color[0][idx][0], self.hallway_color[0][idx][1], self.hallway_color[0][idx][2], self.Transparency[0])
+            for space in spaces:
+                glBegin(GL_POLYGON)
+                for point in space:
+                    glVertex3fv(point)
+                glEnd()
+
+        glColor(self.stairs_color[0][0], self.stairs_color[0][1], self.stairs_color[0][2], self.Transparency[0])
+        glBegin(GL_POLYGON)
+        for point in stairs:
+            glVertex3fv(point)
+        glEnd()
+
+        glColor(self.ev_color[0], self.ev_color[1], self.ev_color[2], self.ev_color[3])
+        glBegin(GL_POLYGON)
+        for point in ev:
+            glVertex3fv(point)
+        glEnd()
+
         glColor(0, 0, 0, 1)
         glLineWidth(3.0)
-        for room in all_room_point:
+        for area in all_room_area:
             glBegin(GL_LINE_LOOP)
-            for point in room:
+            for point in area:
                 point[2] += 0.001
                 glVertex3fv(point)
             glEnd()
+
         glBegin(GL_LINE_LOOP)
         for point in another_area:
             point[2] += 0.001
@@ -422,47 +470,53 @@ class gl_draw:
         all_room_point.append(room_06)
         all_room_point.append(room_07)
 
-        all_another_point = []
-        empty = [[-1.44, -0.33, height],
-                 [-1.44, -0.82, height],
-                 [-0.71, -0.82, height],
-                 [-0.71, -0.33, height]]
+        all_hallway_point = []
         hallway_01 = [[-2.16, -0.16, height],
                       [-2.16, -0.33, height],
                       [-0.71, -0.33, height],
-                      [-0.71, -0.16, height]]
-        hallway_02 = [[-0.87, 0.33, height],
-                      [-0.87, -0.33, height],
+                      [-0.87, -0.16, height]]
+        hallway_02 = [[-0.87, 0.35, height],
+                      [-0.87, -0.16, height],
                       [-0.71, -0.33, height],
-                      [-0.71, 0.33, height]]
-        hallway_03 = [[-0.87, 0.35, height],
-                      [-0.87, 0.18, height],
-                      [2.13, 1.57, height],
-                      [2.13, 1.74, height]]
-        hallway_04 = [[-0.81, 0.50, height],
+                      [-0.71, 0.26, height]]
+        hallway_03_1 = [[-0.87, 0.35, height],
+                      [-0.71, 0.26, height],
+                      [0.71, 0.92, height],
+                      [0.65, 1.05, height]]
+        hallway_03_2 = [[-0.81, 0.50, height],
                       [-0.81, 0.36, height],
                       [-0.51, 0.39, height],
                       [-0.51, 0.50, height]]
-        hallway_05 = [[-0.51, 0.80, height],
+        hallway_03_3 = [[-0.51, 0.80, height],
                       [-0.51, 0.48, height],
-                      [-0.17, 0.51, height],
+                      [0.00, 0.75, height],
                       [-0.17, 0.80, height]]
-        stairs = [[-0.17, 0.90, height],
-                  [-0.17, 0.64, height],
-                  [0.17, 0.67, height],
-                  [0.17, 0.90, height]]
+        hallway_04 = [[0.65, 1.05, height],
+                      [0.71, 0.92, height],
+                      [2.13, 1.57, height],
+                      [2.13, 1.74, height]]
+
+        all_hallway_point.append([hallway_01])
+        all_hallway_point.append([hallway_02])
+        all_hallway_point.append([hallway_03_1, hallway_03_2, hallway_03_3])
+        all_hallway_point.append([hallway_04])
+
+        all_another_point = []
+        terrace = [[-1.44, -0.33, height],
+                 [-1.44, -0.82, height],
+                 [-0.71, -0.82, height],
+                 [-0.71, -0.33, height]]
         ev = [[-0.81, 0.80, height],
               [-0.81, 0.50, height],
               [-0.51, 0.50, height],
               [-0.51, 0.80, height]]
+        stairs = [[-0.17, 0.90, height],
+                  [-0.17, 0.80, height],
+                  [0.00, 0.75, height],
+                  [0.17, 0.83, height],
+                  [0.17, 0.90, height]]
 
-        all_another_point.append(empty)
-        all_another_point.append(hallway_01)
-        all_another_point.append(hallway_02)
-        all_another_point.append(hallway_03)
-        all_another_point.append(hallway_04)
-        all_another_point.append(hallway_05)
-        all_another_point.append(stairs)
+        all_another_point.append(terrace)
         all_another_point.append(ev)
 
         another_area = [[-2.16, -0.16, height],
@@ -486,13 +540,29 @@ class gl_draw:
 
         glBegin(GL_QUADS)
         for idx, room in enumerate(all_room_point):
-            glColor(self.bottom_color[floor][idx][0], self.bottom_color[floor][idx][1], self.bottom_color[floor][idx][2], self.bottom_color[floor][idx][3])
+            glColor(self.bottom_color[floor][idx][0], self.bottom_color[floor][idx][1], self.bottom_color[floor][idx][2], self.Transparency[floor])
             for point in room:
                 glVertex3fv(point)
-        glColor(self.hallway_color[0], self.hallway_color[1], self.hallway_color[2], self.hallway_color[3])
-        for room in all_another_point:
-            for point in room:
-                glVertex3fv(point)
+        for idx, hallways in enumerate(all_hallway_point):
+            glColor(self.hallway_color[floor][idx][0], self.hallway_color[floor][idx][1], self.hallway_color[floor][idx][2], self.Transparency[floor])
+            for hallway in hallways:
+                for point in hallway:
+                    glVertex3fv(point)
+        glEnd()
+        glColor(self.terrace_bottom_color[0], self.terrace_bottom_color[1], self.terrace_bottom_color[2], self.Transparency[floor])
+        glBegin(GL_POLYGON)
+        for point in terrace:
+            glVertex3fv(point)
+        glEnd()
+        glColor(self.ev_color[0], self.ev_color[1], self.ev_color[2], self.ev_color[3])
+        glBegin(GL_POLYGON)
+        for point in ev:
+            glVertex3fv(point)
+        glEnd()
+        glColor(self.stairs_color[floor][0], self.stairs_color[floor][1], self.stairs_color[floor][2], self.Transparency[floor])
+        glBegin(GL_POLYGON)
+        for point in stairs:
+            glVertex3fv(point)
         glEnd()
         glColor(0, 0, 0, 1)
         glLineWidth(3.0)
@@ -519,7 +589,7 @@ class gl_draw:
                                [-0.17, 1.31],
                                [0.17, 1.57],
                                [0.17, 0.83],
-                               [-0.04, 0.73],
+                               [0.00, 0.75],
                                [0.17, 0.83],
                                [2.13, 1.74],
                                [2.13, 1.97],
@@ -630,9 +700,9 @@ class gl_draw:
                 glVertex3fv(point + [height * 2])
             glEnd()
 
-    def draw_Stairs(self, z, height, num):
+    def draw_Stairs(self, z, height, num, floor):
 
-        glColor(self.stairs_color[0], self.stairs_color[1], self.stairs_color[2], self.stairs_color[3])
+        glColor(self.stairs_color[floor][0], self.stairs_color[floor][1], self.stairs_color[floor][2], self.Transparency[floor])
         start = 1.18
         end = 0.90
         space = [[-0.168, 1.31, z + (height / 2.0)],

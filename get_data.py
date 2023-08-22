@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets    import *
 from PyQt5.QtCore       import *
 from plot_data          import plot_data
-from analy_data         import analy_data
+from analy_data import analy_data, FireDetection_thread
 from node_weight        import weight_checker
 from GL.build_gl        import build_gl
 import time
@@ -47,6 +47,71 @@ class db_thread(QThread):
         idx_6F = [i for i in range(208, 210)]
         self.floor_idx_list = [idx_1F, idx_2F, idx_3F, idx_4F, idx_5F, idx_6F]
 
+    def init_DB(self):
+
+        try:
+            sql = 'CREATE DATABASE IF NOT EXISTS ' + self.DB_Name
+            self.cur.execute(sql)
+        except Exception as e:
+            print(e)
+
+        time.sleep(1)
+
+        create_danger_level = "CREATE TABLE IF NOT EXISTS danger_level(time SMALLINT(3) NOT NULL, `101` FLOAT default 0.0, `102` FLOAT default 0.0, `1-1` FLOAT default 0.0, `1-2` FLOAT default 0.0, " \
+                              "`201` FLOAT default 0.0, `202` FLOAT default 0.0, `203` FLOAT default 0.0, `204` FLOAT default 0.0, `205` FLOAT default 0.0, `206` FLOAT default 0.0, `207` FLOAT default 0.0, " \
+                              "`2-1` FLOAT default 0.0, `2-2` FLOAT default 0.0, `2-3` FLOAT default 0.0, `2-4` FLOAT default 0.0, " \
+                              "`301` FLOAT default 0.0, `302` FLOAT default 0.0, `303` FLOAT default 0.0, `304` FLOAT default 0.0, `305` FLOAT default 0.0, `306` FLOAT default 0.0, `307` FLOAT default 0.0, " \
+                              "`3-1` FLOAT default 0.0, `3-2` FLOAT default 0.0, `3-3` FLOAT default 0.0, `3-4` FLOAT default 0.0, " \
+                              "`401` FLOAT default 0.0, `402` FLOAT default 0.0, `403` FLOAT default 0.0, `404` FLOAT default 0.0, `405` FLOAT default 0.0, `406` FLOAT default 0.0, `407` FLOAT default 0.0, " \
+                              "`4-1` FLOAT default 0.0, `4-2` FLOAT default 0.0, `4-3` FLOAT default 0.0, `4-4` FLOAT default 0.0, " \
+                              "`501` FLOAT default 0.0, `502` FLOAT default 0.0, `503` FLOAT default 0.0, `504` FLOAT default 0.0, `505` FLOAT default 0.0, `506` FLOAT default 0.0, `507` FLOAT default 0.0, " \
+                              "`5-1` FLOAT default 0.0, `5-2` FLOAT default 0.0, `5-3` FLOAT default 0.0, `5-4` FLOAT default 0.0, " \
+                              "PRIMARY KEY(time));"
+        create_exit_route = "CREATE TABLE IF NOT EXISTS exit_route(time SMALLINT(3) NOT NULL, `101` TINYINT default 0, `102` TINYINT default 0, " \
+                              "`201` TINYINT default 0, `202` TINYINT default 0, `203` TINYINT default 0, `204` TINYINT default 0, `205` TINYINT default 0, `206` TINYINT default 0, `207` TINYINT default 0, " \
+                              "`301` TINYINT default 0, `302` TINYINT default 0, `303` TINYINT default 0, `304` TINYINT default 0, `305` TINYINT default 0, `306` TINYINT default 0, `307` TINYINT default 0, " \
+                              "`401` TINYINT default 0, `402` TINYINT default 0, `403` TINYINT default 0, `404` TINYINT default 0, `405` TINYINT default 0, `406` TINYINT default 0, `407` TINYINT default 0, " \
+                              "`501` TINYINT default 0, `502` TINYINT default 0, `503` TINYINT default 0, `504` TINYINT default 0, `505` TINYINT default 0, `506` TINYINT default 0, `507` TINYINT default 0, " \
+                              "PRIMARY KEY(time));"
+
+        try:
+            self.cur.execute(create_danger_level)
+        except Exception as e:
+            print("err create_danger_level: ", e)
+        try:
+            self.cur.execute(create_exit_route)
+        except Exception as e:
+            print("err create_exit_route: ", e)
+
+        danger_level_value = ""
+        for _ in range(48):
+            danger_level_value += "0.0, "
+        danger_level_value = danger_level_value[:-2]
+
+        insert_danger_level_1 = "INSERT INTO danger_level VALUES"
+        insert_danger_level_2 = ""
+        for i in range(61):
+            insert_danger_level_2 += "(" + str(i) + ", " + danger_level_value + "), "
+
+        exit_route_value = ""
+        for _ in range(30):
+            exit_route_value += "0, "
+        exit_route_value = exit_route_value[:-2]
+
+        insert_exit_route_1 = "INSERT INTO exit_route VALUES"
+        insert_exit_route_2 = ""
+        for i in range(61):
+            insert_exit_route_2 += "(" + str(i) + ", " + exit_route_value + "), "
+
+        try:
+            self.cur.execute(insert_danger_level_1 + insert_danger_level_2[:-2] + ";")
+        except Exception as e:
+            print("err insert_danger_level: ", e)
+        try:
+            self.cur.execute(insert_exit_route_1 + insert_exit_route_2[:-2] + ";")
+        except Exception as e:
+            print("err insert_exit_route: ", e)
+
     def connect_DB(self):
         if not self.connection:
             try:
@@ -60,21 +125,15 @@ class db_thread(QThread):
                                                      read_timeout=5,
                                                      write_timeout=5,
                                                      connect_timeout=5)
-
                 self.cur = self.db_connection.cursor()
-                # self.make_database()
-                # self.make_tabels()
-                # self.set_tables_values()
+                self.init_DB()
                 self.connection = True
-
             except Exception as err:
                 print(err)
-
         else:
             try:
                 self.db_connection.close()
                 self.connection = False
-
             except Exception as err:
                 print(err)
 
@@ -105,6 +164,8 @@ class db_thread(QThread):
 
             self.cur.execute(sql)
             result = self.cur.fetchall()
+            self.disconnect_DB()
+
             head = list(result[0]).copy()
             for idx, type in enumerate(head):
                 this_floor = 0
@@ -117,27 +178,6 @@ class db_thread(QThread):
                     self.gas_index[this_floor].append(idx)
             self.head = [head[1:12], head[12:61], head[61:110], head[110:159], head[159:208], head[208:210]]
 
-            # all_temp_datas = []
-            # all_gas_datas = []
-            # for _ in range(self.sensor_stack):
-            #     temp_output = self.list_split_per_floor(result[1], self.temp_index)
-            #     gas_output = self.list_split_per_floor(result[1], self.gas_index)
-            #     all_temp_datas.append([time.time()] + temp_output)
-            #     all_gas_datas.append([time.time()] + gas_output)
-            #
-            # for data in result[1:]:
-            #     if self.working:
-            #         temp_output = self.list_split_per_floor(data, self.temp_index)
-            #         gas_output = self.list_split_per_floor(data, self.gas_index)
-            #         all_temp_datas.pop(0)
-            #         all_gas_datas.pop(0)
-            #         all_temp_datas.append([time.time()] + temp_output)
-            #         all_gas_datas.append([time.time()] + gas_output)
-            #         self.data_sig.emit(all_temp_datas, all_gas_datas)
-            #         time.sleep(self.speed / 1)
-            #     else:
-            #         break
-
             total_datas = []
 
             for _ in range(self.sensor_stack):
@@ -146,6 +186,7 @@ class db_thread(QThread):
 
             for data in result[1:]:
                 data = list(data)
+                print(data[0])
                 if self.working:
                     frame_datas = [data[1:12], data[12:61], data[61:110], data[110:159], data[159:208], data[208:210]]
                     total_datas.pop(0)
@@ -155,7 +196,6 @@ class db_thread(QThread):
                 else:
                     break
 
-            self.disconnect_DB()
             self.working = False
             self.end_sig.emit(True)
             self.quit()
@@ -171,9 +211,18 @@ class get_data:
         self.db_worker = None
         self.wc = None
 
+        self.IP = None
+        self.Port = None
+        self.ID = None
+        self.PW = None
+        self.DB_Name = None
+
+        self.last_exit_rout = {}
+
         self.func_init()
         self.var_init()
         self.event_init()
+
 
     def func_init(self):
         self.pd = plot_data(self.ui)
@@ -201,11 +250,24 @@ class get_data:
         self.db_worker.end_sig.connect(self.thread_end)
 
     def set_Parameters(self):
-        self.db_worker.IP = str(self.ui.IP_Edit.text())
-        self.db_worker.Port = self.ui.PORT_Edit.text()
-        self.db_worker.ID = self.ui.ID_Edit.text()
-        self.db_worker.PW = self.ui.PW_Edit.text()
-        self.db_worker.DB_Name = self.ui.DBName_Edit.text()
+        self.IP = self.ui.IP_Edit.text()
+        self.Port = self.ui.PORT_Edit.text()
+        self.ID = self.ui.ID_Edit.text()
+        self.PW = self.ui.PW_Edit.text()
+        self.DB_Name = self.ui.DBName_Edit.text()
+        self.db_worker.IP = self.IP
+        self.db_worker.Port = self.Port
+        self.db_worker.ID = self.ID
+        self.db_worker.PW = self.PW
+        self.db_worker.DB_Name = self.DB_Name
+
+        for floor in range(5):
+            if floor == 0:
+                for room in range(2):
+                    self.last_exit_rout[str(floor + 1) + '0' + str(room + 1)] = 0
+            else:
+                for room in range(7):
+                    self.last_exit_rout[str(floor + 1) + '0' + str(room + 1)] = 0
 
     def worker_start(self):
         if self.db_worker.isRunning():
@@ -241,25 +303,110 @@ class get_data:
             total_gas_datas.append([data[0]] + gas_datas)
         return total_temp_datas, total_gas_datas
 
-    def data_analy(self, total_datas):
-        temp_datas, gas_datas = self.split_datas_sensor_type(self.db_worker.head, total_datas)
-        self.pd.data_plot(temp_datas, gas_datas)
-        self.bg.eva_draw.Fire, temp_idx, gas_idx = self.ad.check_danger(temp_datas, gas_datas)
+    def update_danger_level_DB(self):
+        a = 0
 
-        Fire = False
-        for status in self.bg.eva_draw.Fire:
-            if status:
-                Fire = True
-        if Fire:
+    def update_exit_rout_DB(self, time, exit_routes):
+        exit_rout_sql = 'UPDATE exit_route SET '
+        for room in exit_routes.keys():
+            exit_rout_sql += ('`' + room + '` = ' + str(exit_routes[room]) + ', ')
+        exit_rout_sql = exit_rout_sql[:-2] + ' WHERE time = ' + str(time) + ';'
+
+        try:
+            with pymysql.connect(host=self.IP, port=int(self.Port), user=self.ID, password=self.PW, db=self.DB_Name,
+                                 charset='utf8', autocommit=True, read_timeout=5, write_timeout=5, connect_timeout=5) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(exit_rout_sql)
+        except Exception as e:
+            print(e)
+
+    def data_analy(self, total_datas):
+
+        temp_datas, gas_datas = self.split_datas_sensor_type(self.db_worker.head, total_datas)
+
+        Fire_status, temp_idx, gas_idx = self.ad.check_danger(temp_datas, gas_datas)
+
+        for floor, last, new in zip(range(5), self.bg.eva_draw.Fire, Fire_status):
+            if (not last) and (new):
+                if (floor >= 1) and (floor <= 4):
+                    self.bg.scenario_data[floor - 1]['time'] = time.time()
+        self.bg.eva_draw.Fire = Fire_status
+
+        self.wc.set_node_weight(temp_idx, gas_idx, self.db_worker.temp_index,
+                                self.db_worker.gas_index)
+
+        exit_routs = {}
+        for floor in range(5):
+            if floor == 0:
+                for room in range(2):
+                    start_node = 'room' + str(floor) + str(room)
+                    path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
+                    if path_route[-1] == 'escape00':
+                        exit_routs[str(floor + 1) + '0' + str(room + 1)] = 0
+                    elif path_route[-1] == 'escape01':
+                        exit_routs[str(floor + 1) + '0' + str(room + 1)] = 1
+            else:
+                for room in range(7):
+                    start_node = 'room' + str(floor) + str(room)
+                    path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
+                    if path_route[-1] == 'escape00':
+                        exit_routs[str(floor + 1) + '0' + str(room + 1)] = 0
+                    elif path_route[-1] == 'escape01':
+                        exit_routs[str(floor + 1) + '0' + str(room + 1)] = 1
+
+        exit_rout_change = False
+        for key in exit_routs.keys():
+            if self.last_exit_rout[key] != exit_routs[key]:
+                exit_rout_change = True
+                break
+        if exit_rout_change:
+            self.update_exit_rout_DB(0, exit_routs)
+
+        danger_level = []
+        for floor in range(6):
+            danger_level.append(self.bg.set_danger_level(floor, self.db_worker.head[floor], total_datas[-1][floor + 1]))
+
+
+        if True in self.bg.eva_draw.Fire:
+            if self.bg.Watch_Mode == 0:
+                for floor in range(6):
+                    if floor == self.bg.eva_draw.Start_floor:
+                        self.bg.gl_draw.Transparency[floor] = 1.0
+                    elif floor <= self.bg.eva_draw.Start_floor:
+                        self.bg.gl_draw.Transparency[floor] = 0.1
+                    else:
+                        self.bg.gl_draw.Transparency[floor] = 0.0
+
             scenario_idx = self.ad.check_scenario(self.bg.eva_draw.Fire, temp_datas, gas_datas)
-            for i in range(len(scenario_idx)):
-                if self.bg.scenario_idx[i] != scenario_idx[i]:
-                    self.bg.scenario_idx[i] = scenario_idx[i]
-                    self.bg.load_scenario(i)
+
+            change_scenario = False
+            for floor, danger in enumerate(self.bg.eva_draw.Fire):
+                if danger and (floor != 0):
+                    floor -= 1
+                    if self.bg.scenario_data[floor]['index'] != scenario_idx[floor]:
+                        change_scenario = True
+                        self.bg.scenario_data[floor]['index'] = scenario_idx[floor]
+                        self.bg.load_scenario(floor)
+
+            if change_scenario:
+                a = 0
+
+        else:
+            for floor in range(6):
+                self.bg.gl_draw.Transparency[floor] = 1.0
+
+
+
+
+        if True in self.bg.eva_draw.Fire:
+            # for i in range(len(scenario_idx)):
+            #     if self.bg.scenario_idx[i] != scenario_idx[i]:
+            #         self.bg.scenario_idx[i] = scenario_idx[i]
+            #         self.bg.load_scenario(i)
 
             if self.bg.Watch_Present:
-                for floor in range(4):
-                    self.bg.set_danger_level(floor, self.db_worker.head[floor + 1][:-1], total_datas[-1][floor + 2][:-1])
+                for floor in range(6):
+                    self.bg.set_danger_level(floor, self.db_worker.head[floor], total_datas[-1][floor + 1])
 
                 self.wc.set_node_weight(self.ad.temp_Fire_idx, self.ad.gas_Fire_idx, self.db_worker.temp_index, self.db_worker.gas_index)
                 start_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
@@ -271,21 +418,49 @@ class get_data:
                     path_output += point + ' -> '
                 self.react_log(path_output[:-3])
 
-
         else:
             self.bg.eva_draw.Fire = [False for _ in range(5)]
             self.bg.gl_draw.show_route = False
             self.bg.eva_draw.path_route = None
 
+        self.pd.data_plot(temp_datas, gas_datas)
         self.data_log(temp_datas[-1], gas_datas[-1])
 
     def change_Watch_Mode(self):
         if self.ui.WatchMode0.isChecked():
             self.bg.Watch_Mode = 0
+            self.ui.WatchFloor_comboBox.setEnabled(False)
+            if self.ui.WatchMode_Highlight.isChecked():
+                for floor in range(6):
+                    if floor == self.bg.eva_draw.Start_floor:
+                        self.bg.gl_draw.Transparency[floor] = 1.0
+                    elif floor <= self.bg.eva_draw.Start_floor:
+                        self.bg.gl_draw.Transparency[floor] = 0.1
+                    else:
+                        self.bg.gl_draw.Transparency[floor] = 0.0
+            else:
+                for floor in range(6):
+                    self.bg.gl_draw.Transparency[floor] = 1.0
         elif self.ui.WatchMode1.isChecked():
             self.bg.Watch_Mode = 1
+            self.ui.WatchFloor_comboBox.setEnabled(True)
+            for floor in range(6):
+                self.bg.gl_draw.Transparency[floor] = 1.0
         elif self.ui.WatchMode2.isChecked():
             self.bg.Watch_Mode = 2
+            self.ui.WatchFloor_comboBox.setEnabled(True)
+            for floor in range(6):
+                self.bg.gl_draw.Transparency[floor] = 1.0
+
+        self.bg.trans_pos_x, self.bg.trans_pos_y, self.bg.trans_pos_z = (0, 0, 0)
+        self.bg.x_angle, self.bg.z_angle = 1, 1
+
+        # camera
+        self.bg.last_pos_x, self.bg.last_pos_y, self.bg.last_pos_z = 0.0, 5.0, -5.0
+
+        # object move
+        self.bg.move_last_pos_x, self.bg.move_last_pos_y, self.bg.move_last_pos_z = 0.0, 0.0, 0.0
+        self.bg.trans_pos_x, self.bg.trans_pos_y, self.bg.trans_pos_z = 0, 0, 0
 
     def change_Start_Floor(self):
         self.bg.eva_draw.Start_floor = self.ui.StartFloor_comboBox.currentIndex()
@@ -375,6 +550,9 @@ class get_data:
         self.bg.gl_draw.Watch_floor = self.ui.WatchFloor_comboBox.currentIndex()
         self.bg.eva_draw.Watch_floor = self.bg.gl_draw.Watch_floor
 
+        self.bg.gl_draw.Transparency[self.bg.gl_draw.Watch_floor] = 1.0
+
+
     def change_N_Mode(self):
         if self.ui.watch_present.isChecked():
             self.bg.Watch_Present = True
@@ -391,7 +569,6 @@ class get_data:
                         time = len(self.bg.future_data[floor - 1][1:]) - 1
                     if len(self.bg.future_data[floor - 1]) != 0:
                         self.bg.set_danger_level(floor - 1, self.db_worker.head[floor][:-1], self.bg.future_data[floor - 1][time][1:])
-
 
     def change_N_min(self):
         if not self.bg.Watch_Present:

@@ -250,11 +250,7 @@ class eva_draw:
         }
 
     def draw_Danger_Building(self):
-        Fire = False
-        for status in self.Fire:
-            if status:
-                Fire = True
-        if Fire:
+        if True in self.Fire:
             if self.Watch_floor == 0:
                 self.draw_Obj(self.room_position[2][0], self.room_position[2][1], self.height * self.Start_floor)
             else:
