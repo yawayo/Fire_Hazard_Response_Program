@@ -1,7 +1,12 @@
 from get_data import get_data
+
+from shared_data import SharedData
+
 from PyQt5.QtCore import QTimer, QTime
 from PyQt5.QtWidgets import QLineEdit, QHeaderView
 from PyQt5.QtGui import QIntValidator
+
+
 
 class func_set:
     def __init__(self, ui):
@@ -35,6 +40,7 @@ class func_set:
     def func_init(self):
         self.set_timer_event()
         self.gd = get_data(self.ui)
+
 
 
     def event_init(self):
