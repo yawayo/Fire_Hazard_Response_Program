@@ -423,218 +423,169 @@ class get_data:
         return exit_routs
 
     def data_analy(self, total_datas):
+        try:
 
-        #region get data
-        temp_datas, gas_datas = self.split_datas_sensor_type(self.db_worker.head, total_datas)
-        #endregion
+            #region get data
+            temp_datas, gas_datas = self.split_datas_sensor_type(self.db_worker.head, total_datas)
+            #endregion
 
-        #region check Fire
-        Fire_status, temp_idx, gas_idx = self.ad.check_danger(temp_datas, gas_datas)
+            #region check Fire
+            Fire_status, temp_idx, gas_idx = self.ad.check_danger(temp_datas, gas_datas)
 
-        for floor, last, new in zip(range(5), self.bg.eva_draw.Fire, Fire_status):
-            if (not last) and (new):
-                if (floor >= 1) and (floor <= 4):
-                    self.bg.scenario_data[floor - 1]['start_time'] = int(time.time())
-                    min_time = time.time()
-                    for dif_floor in range(4):
-                        if (floor - 1) != dif_floor:
+            for floor, last, new in zip(range(5), self.bg.eva_draw.Fire, Fire_status):
+                if (not last) and (new):
+                    if (floor >= 1) and (floor <= 4):
+                        self.bg.scenario_data[floor - 1]['start_time'] = int(time.time())
+                        min_time = time.time()
+                        for dif_floor in range(4):
+                            if (floor - 1) != dif_floor:
+                                if self.bg.scenario_data[dif_floor]['start_time'] is not None:
+                                    if (self.bg.scenario_data[dif_floor]['start_time'] - min_time) <= 0:
+                                        min_time = self.bg.scenario_data[dif_floor]['start_time']
+                        for dif_floor in range(4):
                             if self.bg.scenario_data[dif_floor]['start_time'] is not None:
-                                if (self.bg.scenario_data[dif_floor]['start_time'] - min_time) <= 0:
-                                    min_time = self.bg.scenario_data[dif_floor]['start_time']
-                    for dif_floor in range(4):
-                        if self.bg.scenario_data[dif_floor]['start_time'] is not None:
-                            self.bg.scenario_data[dif_floor]['diff'] = int(int(self.bg.scenario_data[dif_floor]['start_time'] - min_time) / 60.0)
-        self.bg.eva_draw.Fire = Fire_status
-        #endregion
+                                self.bg.scenario_data[dif_floor]['diff'] = int(int(self.bg.scenario_data[dif_floor]['start_time'] - min_time) / 60.0)
+            self.bg.eva_draw.Fire = Fire_status
+            #endregion
 
-        watching_node = None
-        if self.bg.Watch_Present:
-            watching_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
+            watching_node = None
+            if self.bg.Watch_Present:
+                watching_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
 
-        # region real time DB Update
-        real_time = 0
-        danger_level = []
-        for floor in range(6):
-            danger_level.append(self.bg.set_danger_level_Sensor(floor, self.db_worker.head[floor], total_datas[-1][floor + 1], self.bg.Watch_Present))
+            # region real time DB Update
+            real_time = 0
+            danger_level = []
+            for floor in range(6):
+                danger_level.append(self.bg.set_danger_level_Sensor(floor, self.db_worker.head[floor], total_datas[-1][floor + 1], self.bg.Watch_Present))
 
-        danger_level_change = self.check_danger_level_changed(self.last_danger_level[real_time], danger_level)
+            danger_level_change = self.check_danger_level_changed(self.last_danger_level[real_time], danger_level)
 
-        if danger_level_change:
-            self.last_danger_level[real_time] = danger_level
-            self.update_danger_level_DB(real_time, danger_level)
+            if danger_level_change:
+                self.last_danger_level[real_time] = danger_level
+                self.update_danger_level_DB(real_time, danger_level)
 
-        self.wc.set_node_weight_useSensor(temp_idx, gas_idx, self.db_worker.temp_index, self.db_worker.gas_index)
-        exit_routs = self.search_all_eixt_route(self.wc.node, watching_node)
+            self.wc.set_node_weight_useSensor(temp_idx, gas_idx, self.db_worker.temp_index, self.db_worker.gas_index)
+            exit_routs = self.search_all_eixt_route(self.wc.node, watching_node)
 
-        exit_rout_change = self.check_exit_route_changed(self.last_exit_rout[real_time], exit_routs)
-        if exit_rout_change:
-            self.last_exit_rout[real_time] = exit_routs
-            self.update_exit_rout_DB(real_time, exit_routs)
-
-        #endregion
-
-        if True in self.bg.eva_draw.Fire:
-            scenario_idx = self.ad.check_scenario(self.bg.eva_draw.Fire, temp_datas, gas_datas)
-            change_scenario = self.check_scenario_changed([floor_data['index'] for floor_data in self.bg.scenario_data], scenario_idx)
-
-            # region future DB Update
-
-            if change_scenario:
-                floor_idx = [[0, 47], [47, 94], [94, 141], [141, 188]]
-                for minute in range(1, 61):
-                    layer_height_data = [3.0 for _ in range(188)]
-
-                    danger_level = []
-                    set = False
-                    if not self.bg.Watch_Present:
-                        if minute == self.bg.time_gap:
-                            set = True
-                    for floor in range(5):
-                        if floor == 0:
-                            danger_level.append(self.bg.set_danger_level_Layerheight(floor, [], set))
-                        else:
-                            floor -= 1
-                            data = []
-                            if self.bg.scenario_data[floor]['index'] != -1:
-                                search_time = minute + self.bg.scenario_data[floor]['diff']
-                                if search_time >= 60:
-                                    search_time = 60
-                                data = self.bg.scenario_data[floor]['data'][str(search_time)]
-                                layer_height_data[floor_idx[floor][0]:floor_idx[floor][1]] = data
-                            else:
-                                data = []
-
-                            danger_level.append(self.bg.set_danger_level_Layerheight(floor + 1, data, set))
-
-                    self.update_danger_level_DB(minute, danger_level)
-
-                    self.wc.set_node_weight_useLayerheight(layer_height_data)
-
-                    exit_routs = {}
-                    for floor in range(5):
-                        if floor == 0:
-                            for room in range(2):
-                                start_node = 'room' + str(floor) + str(room)
-                                path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
-                                if path_route[-1] == 'escape00':
-                                    exit_routs[str(floor + 1) + '0' + str(room + 1)] = 0
-                                elif path_route[-1] == 'escape01':
-                                    exit_routs[str(floor + 1) + '0' + str(room + 1)] = 1
-
-                                if not self.bg.Watch_Present:
-                                    if minute == self.bg.time_gap:
-                                        if start_node == 'room' + str(self.bg.eva_draw.Start_floor) + str(
-                                                self.bg.eva_draw.Start_room):
-                                            self.bg.eva_draw.path_route = path_route
-                        else:
-                            for room in range(7):
-                                start_node = 'room' + str(floor) + str(room)
-                                path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
-                                if path_route[-1] == 'escape00':
-                                    exit_routs[str(floor + 1) + '0' + str(room + 1)] = 0
-                                elif path_route[-1] == 'escape01':
-                                    exit_routs[str(floor + 1) + '0' + str(room + 1)] = 1
-
-                                if not self.bg.Watch_Present:
-                                    if minute == self.bg.time_gap:
-                                        if start_node == 'room' + str(self.bg.eva_draw.Start_floor) + str(
-                                                self.bg.eva_draw.Start_room):
-                                            self.bg.eva_draw.path_route = path_route
-
-            else:
-                floor_idx = [[0, 47], [47, 94], [94, 141], [141, 188]]
-                minute = self.bg.time_gap
-                layer_height_data = [3.0 for _ in range(188)]
-
-                danger_level = []
-                set = False
-                if not self.bg.Watch_Present:
-                    if minute == self.bg.time_gap:
-                        set = True
-                for floor in range(5):
-                    if floor == 0:
-                        danger_level.append(self.bg.set_danger_level_Layerheight(floor, [], set))
-                    else:
-                        floor -= 1
-                        data = []
-                        if self.bg.scenario_data[floor]['index'] != -1:
-                            search_time = minute + self.bg.scenario_data[floor]['diff']
-                            if search_time >= 60:
-                                search_time = 60
-                            if search_time == 0:
-                                print(minute, self.bg.scenario_data[floor]['diff'])
-                            data = self.bg.scenario_data[floor]['data'][str(search_time)]
-                            layer_height_data[floor_idx[floor][0]:floor_idx[floor][1]] = data
-                        else:
-                            data = []
-
-                        danger_level.append(self.bg.set_danger_level_Layerheight(floor + 1, data, set))
-
-                self.update_danger_level_DB(minute, danger_level)
-
-                self.wc.set_node_weight_useLayerheight(layer_height_data)
-
-                exit_routs = {}
-                for floor in range(5):
-                    if floor == 0:
-                        for room in range(2):
-                            start_node = 'room' + str(floor) + str(room)
-                            path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
-                            if path_route[-1] == 'escape00':
-                                exit_routs[str(floor + 1) + '0' + str(room + 1)] = 0
-                            elif path_route[-1] == 'escape01':
-                                exit_routs[str(floor + 1) + '0' + str(room + 1)] = 1
-
-                            if not self.bg.Watch_Present:
-                                if minute == self.bg.time_gap:
-                                    if start_node == 'room' + str(self.bg.eva_draw.Start_floor) + str(
-                                            self.bg.eva_draw.Start_room):
-                                        self.bg.eva_draw.path_route = path_route
-                    else:
-                        for room in range(7):
-                            start_node = 'room' + str(floor) + str(room)
-                            path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
-                            if path_route[-1] == 'escape00':
-                                exit_routs[str(floor + 1) + '0' + str(room + 1)] = 0
-                            elif path_route[-1] == 'escape01':
-                                exit_routs[str(floor + 1) + '0' + str(room + 1)] = 1
-
-                            if not self.bg.Watch_Present:
-                                if minute == self.bg.time_gap:
-                                    if start_node == 'room' + str(self.bg.eva_draw.Start_floor) + str(
-                                            self.bg.eva_draw.Start_room):
-                                        self.bg.eva_draw.path_route = path_route
+            exit_rout_change = self.check_exit_route_changed(self.last_exit_rout[real_time], exit_routs)
+            if exit_rout_change:
+                self.last_exit_rout[real_time] = exit_routs
+                self.update_exit_rout_DB(real_time, exit_routs)
 
             #endregion
 
-
-        else:
-            self.bg.eva_draw.Fire = [False for _ in range(5)]
-            self.bg.gl_draw.show_route = False
-            self.bg.eva_draw.path_route = None
-
-
-
-
-
-
-        if self.bg.Watch_Mode == 0:
             if True in self.bg.eva_draw.Fire:
-                if self.ui.WatchMode_Highlight.isChecked():
-                    for floor in range(6):
-                        if floor == self.bg.eva_draw.Start_floor:
+                scenario_idx = self.ad.check_scenario(self.bg.eva_draw.Fire, temp_datas, gas_datas)
+                change_scenario = self.check_scenario_changed([floor_data['index'] for floor_data in self.bg.scenario_data], scenario_idx)
+
+                # region future DB Update
+
+                floor_idx = [[0, 47], [47, 94], [94, 141], [141, 188]]
+                if change_scenario:
+                    for minute in range(1, 61):
+                        layer_height_data = [3.0 for _ in range(188)]
+                        watching_node = None
+                        set = False
+                        if not self.bg.Watch_Present:
+                            if minute == self.bg.time_gap:
+                                watching_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
+                                set = True
+
+                        danger_level = []
+                        for floor in range(5):
+                            data = []
+                            if floor != 0:
+                                if self.bg.scenario_data[floor - 1]['index'] != -1:
+                                    search_time = minute + self.bg.scenario_data[floor - 1]['diff']
+                                    if search_time >= 60:
+                                        search_time = 60
+                                    data = self.bg.scenario_data[floor - 1]['data'][str(search_time)]
+                                    layer_height_data[floor_idx[floor - 1][0]:floor_idx[floor - 1][1]] = data
+                            danger_level.append(self.bg.set_danger_level_Layerheight(floor, data, set))
+
+                        danger_level_change = self.check_danger_level_changed(self.last_danger_level[minute], danger_level)
+                        if danger_level_change:
+                            self.last_danger_level[minute] = danger_level
+                            self.update_danger_level_DB(minute, danger_level)
+
+                        self.update_danger_level_DB(minute, danger_level)
+
+                        self.wc.set_node_weight_useLayerheight(layer_height_data)
+                        exit_routs = self.search_all_eixt_route(self.wc.node, watching_node)
+                        exit_rout_change = self.check_exit_route_changed(self.last_exit_rout[minute], exit_routs)
+                        if exit_rout_change:
+                            self.last_exit_rout[minute] = exit_routs
+                            self.update_exit_rout_DB(minute, exit_routs)
+
+                else: # not change scenario
+                    layer_height_data = [3.0 for _ in range(188)]
+                    watching_node = None
+                    set = False
+                    if not self.bg.Watch_Present:
+                        watching_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
+                        set = True
+
+                    danger_level = []
+                    for floor in range(5):
+                        data = []
+                        if floor != 0:
+                            if self.bg.scenario_data[floor - 1]['index'] != -1:
+                                search_time = self.bg.time_gap + self.bg.scenario_data[floor - 1]['diff']
+                                if search_time >= 60:
+                                    search_time = 60
+                                if search_time:
+                                    a = 0
+                                data = self.bg.scenario_data[floor - 1]['data'][str(search_time)]
+                                layer_height_data[floor_idx[floor - 1][0]:floor_idx[floor - 1][1]] = data
+                        danger_level.append(self.bg.set_danger_level_Layerheight(floor, data, set))
+
+                    danger_level_change = self.check_danger_level_changed(self.last_danger_level[self.bg.time_gap], danger_level)
+                    if danger_level_change:
+                        self.last_danger_level[self.bg.time_gap] = danger_level
+                        self.update_danger_level_DB(self.bg.time_gap, danger_level)
+
+                    self.update_danger_level_DB(self.bg.time_gap, danger_level)
+
+                    self.wc.set_node_weight_useLayerheight(layer_height_data)
+                    exit_routs = self.search_all_eixt_route(self.wc.node, watching_node)
+                    exit_rout_change = self.check_exit_route_changed(self.last_exit_rout[self.bg.time_gap], exit_routs)
+                    if exit_rout_change:
+                        self.last_exit_rout[self.bg.time_gap] = exit_routs
+                        self.update_exit_rout_DB(self.bg.time_gap, exit_routs)
+
+                #endregion
+
+
+            else:
+                self.bg.eva_draw.Fire = [False for _ in range(5)]
+                self.bg.gl_draw.show_route = False
+                self.bg.eva_draw.path_route = None
+
+
+
+
+
+
+            if self.bg.Watch_Mode == 0:
+                if True in self.bg.eva_draw.Fire:
+                    if self.ui.WatchMode_Highlight.isChecked():
+                        for floor in range(6):
+                            if floor == self.bg.eva_draw.Start_floor:
+                                self.bg.gl_draw.Transparency[floor] = 1.0
+                            else:
+                                self.bg.gl_draw.Transparency[floor] = 0.1
+                    else:
+                        for floor in range(6):
                             self.bg.gl_draw.Transparency[floor] = 1.0
-                        else:
-                            self.bg.gl_draw.Transparency[floor] = 0.1
                 else:
                     for floor in range(6):
                         self.bg.gl_draw.Transparency[floor] = 1.0
-            else:
-                for floor in range(6):
-                    self.bg.gl_draw.Transparency[floor] = 1.0
 
-        self.pd.data_plot(temp_datas, gas_datas)
-        self.data_log(temp_datas[-1], gas_datas[-1])
+            self.pd.data_plot(temp_datas, gas_datas)
+            self.data_log(temp_datas[-1], gas_datas[-1])
+
+        except Exception as e:
+            print(e)
 
     def change_Watch_Mode(self):
         if self.ui.WatchMode0.isChecked():
