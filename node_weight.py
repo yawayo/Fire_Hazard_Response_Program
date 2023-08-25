@@ -3,7 +3,6 @@ class weight_checker:
         super().__init__()
         self.node = None
         self.map = None
-        self.level = None
         self.var_init()
 
     def var_init(self):
@@ -13,17 +12,17 @@ class weight_checker:
             # room
             'room00': {'hallway01': 1},
             'room01': {'hallway01': 1},
-            'room02': {'hallway01': 1, 'escape00': 1},
+            'door': {'hallway01': 1, 'escape00': 1},
 
             # hallway
             'hallway00': {'hallway01': 1, 'stair0': 1},
-            'hallway01': {'hallway00': 1, 'room00': 1, 'room01': 1, 'room02': 1},
+            'hallway01': {'hallway00': 1, 'room00': 1, 'room01': 1, 'door': 1},
 
             # Stair
             'stair0': {'hallway00': 1, 'stair1': 1},
 
             # Escape Node
-            'escape00': {'room02': 1},
+            'escape00': {'door': 1},
 
             # 2 Floor ###########################################################################
 
@@ -170,10 +169,10 @@ class weight_checker:
             '4': [],
             '5': [],
             '6': [],
-            '7': ['room02'],
-            '8': ['room00'],
-            '9': ['hallway01'],
-            '10': ['room00'],
+            '7': ['door', 'hallway01'],
+            '8': ['room00', 'hallway01'],
+            '9': ['hallway01', 'door'],
+            '10': ['room00', 'hallway01'],
             '11': ['stair0'],
 
             # 2 Floor ###########################################################################
@@ -398,14 +397,242 @@ class weight_checker:
             '208': ['stair5'],
             '209': ['stair5'],
         }
-        self.level = [[0],
-                      [0, 0, 0, 0, 0, 0, 0],
-                      [0, 0, 0, 0, 0, 0, 0],
-                      [0, 0, 0, 0, 0, 0, 0],
-                      [0, 0, 0, 0, 0, 0, 0],
-                      [0]]
 
-    def set_node_weight(self, danger_temp_idx, danger_gas_idx, temp_idx, gas_idx):
+        self.layer_height_map = {
+            # 2 Floor ###########################################################################
+            '1': ['room10', 'hallway20'],       # 201
+            '2': ['room10', 'hallway20'],
+            '3': ['room10', 'hallway20'],
+            '4': ['room10', 'hallway20'],
+            '5': ['room10', 'hallway20'],
+            '6': ['room10', 'hallway20'],
+            '7': ['room10', 'hallway20'],
+
+            '8': ['hallway23'],       # hallway1
+
+            '9': ['room11', 'hallway21'],       # 202
+            '10': ['room11', 'hallway21'],
+            '11': ['room11', 'hallway21'],
+            '12': ['room11', 'hallway21'],
+            '13': ['room11', 'hallway21'],
+            '14': ['room11', 'hallway21'],
+
+            '15': ['room12', 'hallway28'],      # 203
+            '16': ['room12', 'hallway28'],
+            '17': ['room12', 'hallway28'],
+            '18': ['room12', 'hallway28'],
+            '19': ['room12', 'hallway28'],
+            '20': ['room12', 'hallway28'],
+
+            '21': ['hallway25'],      # hallway2
+
+            '22': ['hallway31'],      # hallway3
+
+            '23': ['room13', 'hallway30'],      # 204
+            '24': ['room13', 'hallway30'],
+            '25': ['room13', 'hallway30'],
+            '26': ['room13', 'hallway30'],
+            '27': ['room13', 'hallway30'],
+            '28': ['room13', 'hallway30'],
+
+            '29': ['room14', 'hallway32'],      # 205
+            '30': ['room14', 'hallway32'],
+            '31': ['room14', 'hallway32'],
+            '32': ['room14', 'hallway32'],
+            '33': ['room14', 'hallway32'],
+            '34': ['room14', 'hallway32'],
+
+            '35': ['room15', 'hallway34'],      # 206
+            '36': ['room15', 'hallway34'],
+            '37': ['room15', 'hallway34'],
+            '38': ['room15', 'hallway34'],
+            '39': ['room15', 'hallway34'],
+            '40': ['room15', 'hallway34'],
+
+            '41': ['room16', 'hallway35'],      # 207
+            '42': ['room16', 'hallway35'],
+            '43': ['room16', 'hallway35'],
+            '44': ['room16', 'hallway35'],
+            '45': ['room16', 'hallway35'],
+            '46': ['room16', 'hallway35'],
+            '47': ['room16', 'hallway35'],
+
+            # 3 Floor ###########################################################################
+            '48': ['room20', 'hallway40'],       # 201
+            '49': ['room20', 'hallway40'],
+            '50': ['room20', 'hallway40'],
+            '51': ['room20', 'hallway40'],
+            '52': ['room20', 'hallway40'],
+            '53': ['room20', 'hallway40'],
+            '54': ['room20', 'hallway40'],
+
+            '55': ['hallway43'],       # hallway1
+
+            '56': ['room21', 'hallway41'],       # 202
+            '57': ['room21', 'hallway41'],
+            '58': ['room21', 'hallway41'],
+            '59': ['room21', 'hallway41'],
+            '60': ['room21', 'hallway41'],
+            '61': ['room21', 'hallway41'],
+
+            '62': ['room22', 'hallway48'],      # 203
+            '63': ['room22', 'hallway48'],
+            '64': ['room22', 'hallway48'],
+            '65': ['room22', 'hallway48'],
+            '66': ['room22', 'hallway48'],
+            '67': ['room22', 'hallway48'],
+
+            '68': ['hallway45'],      # hallway2
+
+            '69': ['hallway51'],      # hallway3
+
+            '70': ['room23', 'hallway50'],      # 204
+            '71': ['room23', 'hallway50'],
+            '72': ['room23', 'hallway50'],
+            '73': ['room23', 'hallway50'],
+            '74': ['room23', 'hallway50'],
+            '75': ['room23', 'hallway50'],
+
+            '76': ['room24', 'hallway52'],      # 205
+            '77': ['room24', 'hallway52'],
+            '78': ['room24', 'hallway52'],
+            '79': ['room24', 'hallway52'],
+            '80': ['room24', 'hallway52'],
+            '81': ['room24', 'hallway52'],
+
+            '82': ['room25', 'hallway54'],      # 206
+            '83': ['room25', 'hallway54'],
+            '84': ['room25', 'hallway54'],
+            '85': ['room25', 'hallway54'],
+            '86': ['room25', 'hallway54'],
+            '87': ['room25', 'hallway54'],
+
+            '88': ['room26', 'hallway55'],      # 207
+            '89': ['room26', 'hallway55'],
+            '90': ['room26', 'hallway55'],
+            '91': ['room26', 'hallway55'],
+            '92': ['room26', 'hallway55'],
+            '93': ['room26', 'hallway55'],
+            '94': ['room26', 'hallway55'],
+
+            # 4 Floor ###########################################################################
+            '95': ['room30', 'hallway60'],       # 201
+            '96': ['room30', 'hallway60'],
+            '97': ['room30', 'hallway60'],
+            '98': ['room30', 'hallway60'],
+            '99': ['room30', 'hallway60'],
+            '100': ['room30', 'hallway60'],
+            '101': ['room30', 'hallway60'],
+
+            '102': ['hallway63'],       # hallway1
+
+            '103': ['room31', 'hallway61'],       # 202
+            '104': ['room31', 'hallway61'],
+            '105': ['room31', 'hallway61'],
+            '106': ['room31', 'hallway61'],
+            '107': ['room31', 'hallway61'],
+            '108': ['room31', 'hallway61'],
+
+            '109': ['room32', 'hallway68'],      # 203
+            '110': ['room32', 'hallway68'],
+            '111': ['room32', 'hallway68'],
+            '112': ['room32', 'hallway68'],
+            '113': ['room32', 'hallway68'],
+            '114': ['room32', 'hallway68'],
+
+            '115': ['hallway65'],      # hallway2
+
+            '116': ['hallway71'],      # hallway3
+
+            '117': ['room33', 'hallway70'],      # 204
+            '118': ['room33', 'hallway70'],
+            '119': ['room33', 'hallway70'],
+            '120': ['room33', 'hallway70'],
+            '121': ['room33', 'hallway70'],
+            '122': ['room33', 'hallway70'],
+
+            '123': ['room34', 'hallway72'],      # 205
+            '124': ['room34', 'hallway72'],
+            '125': ['room34', 'hallway72'],
+            '126': ['room34', 'hallway72'],
+            '217': ['room34', 'hallway72'],
+            '218': ['room34', 'hallway72'],
+
+            '129': ['room35', 'hallway74'],      # 206
+            '130': ['room35', 'hallway74'],
+            '131': ['room35', 'hallway74'],
+            '132': ['room35', 'hallway74'],
+            '133': ['room35', 'hallway74'],
+            '134': ['room35', 'hallway74'],
+
+            '135': ['room36', 'hallway75'],      # 207
+            '136': ['room36', 'hallway75'],
+            '137': ['room36', 'hallway75'],
+            '138': ['room36', 'hallway75'],
+            '139': ['room36', 'hallway75'],
+            '140': ['room36', 'hallway75'],
+            '141': ['room36', 'hallway75'],
+
+            # 5 Floor ###########################################################################
+            '142': ['room40', 'hallway80'],       # 201
+            '143': ['room40', 'hallway80'],
+            '144': ['room40', 'hallway80'],
+            '145': ['room40', 'hallway80'],
+            '146': ['room40', 'hallway80'],
+            '147': ['room40', 'hallway80'],
+            '148': ['room40', 'hallway80'],
+
+            '149': ['hallway83'],       # hallway1
+
+            '150': ['room41', 'hallway81'],       # 202
+            '151': ['room41', 'hallway81'],
+            '152': ['room41', 'hallway81'],
+            '153': ['room41', 'hallway81'],
+            '154': ['room41', 'hallway81'],
+            '155': ['room41', 'hallway81'],
+
+            '156': ['room42', 'hallway88'],      # 203
+            '157': ['room42', 'hallway88'],
+            '158': ['room42', 'hallway88'],
+            '159': ['room42', 'hallway88'],
+            '160': ['room42', 'hallway88'],
+            '161': ['room42', 'hallway88'],
+
+            '162': ['hallway85'],      # hallway8
+
+            '163': ['hallway91'],      # hallway9
+
+            '164': ['room43', 'hallway90'],      # 204
+            '165': ['room43', 'hallway90'],
+            '166': ['room43', 'hallway90'],
+            '167': ['room43', 'hallway90'],
+            '168': ['room43', 'hallway90'],
+            '169': ['room43', 'hallway90'],
+
+            '170': ['room44', 'hallway92'],      # 205
+            '171': ['room44', 'hallway92'],
+            '172': ['room44', 'hallway92'],
+            '173': ['room44', 'hallway92'],
+            '174': ['room44', 'hallway92'],
+            '175': ['room44', 'hallway92'],
+
+            '176': ['room45', 'hallway94'],      # 206
+            '177': ['room45', 'hallway94'],
+            '178': ['room45', 'hallway94'],
+            '179': ['room45', 'hallway94'],
+            '180': ['room45', 'hallway94'],
+            '181': ['room45', 'hallway94'],
+
+            '182': ['room46', 'hallway95'],      # 207
+            '183': ['room46', 'hallway95'],
+            '184': ['room46', 'hallway95'],
+            '185': ['room46', 'hallway95'],
+            '186': ['room46', 'hallway95'],
+            '187': ['room46', 'hallway95'],
+            '188': ['room46', 'hallway95'],
+        }
+
+    def set_node_weight_useSensor(self, danger_temp_idx, danger_gas_idx, temp_idx, gas_idx):
 
         for keys in self.node.keys():
             for weight_node in self.node[keys]:
@@ -420,5 +647,19 @@ class weight_checker:
             for node_num in floor_nodes:
                 if str(node_num) in self.map.keys():
                     for sensor_node in self.map[str(node_num)]:
+                        for near_node in self.node[sensor_node]:
+                            self.node[near_node][sensor_node] = 100
+
+    def set_node_weight_useLayerheight(self, total_data):
+
+        for keys in self.node.keys():
+            for weight_node in self.node[keys]:
+                self.node[keys][weight_node] = 1
+        self.node['stair5']['escape01'] = 50
+
+        for node, value in enumerate(total_data):
+            if float(value) <= 1.6:
+                if str(node + 1) in self.layer_height_map.keys():
+                    for sensor_node in self.layer_height_map[str(node + 1)]:
                         for near_node in self.node[sensor_node]:
                             self.node[near_node][sensor_node] = 100

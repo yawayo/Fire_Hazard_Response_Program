@@ -18,9 +18,9 @@ class func_set:
         header = self.ui.system_log_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        header = self.ui.react_log_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        # header = self.ui.react_log_table.horizontalHeader()
+        # header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        # header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         header = self.ui.analysis_log_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
@@ -39,6 +39,7 @@ class func_set:
 
     def event_init(self):
         self.ui.Start_Service_btn.clicked.connect(self.gd.worker_start)
+        self.ui.reset_btn.clicked.connect(self.gd.set_default_param)
         self.ui.WatchMode0.clicked.connect(self.gd.change_Watch_Mode)
         self.ui.WatchMode1.clicked.connect(self.gd.change_Watch_Mode)
         self.ui.WatchMode2.clicked.connect(self.gd.change_Watch_Mode)

@@ -29,8 +29,8 @@ class plot_data:
         self.ui.gas_floor_graph.setTitle('Gas (%s)' % datetime.now().strftime('%Y/%m/%d %H:%M:%S'))
         self.ui.temp_floor_graph.setMouseEnabled(x=False, y=False)
         self.ui.gas_floor_graph.setMouseEnabled(x=False, y=False)
-        self.ui.temp_floor_graph.setBackground('w')
-        self.ui.gas_floor_graph.setBackground('w')
+        self.ui.temp_floor_graph.setBackground((0, 0, 0, 0))
+        self.ui.gas_floor_graph.setBackground((0, 0, 0, 0))
         self.ui.temp_floor_graph.setLimits(yMin=0)
         self.ui.gas_floor_graph.setLimits(yMin=0)
         self.ui.temp_floor_graph.showGrid(x=False, y=True)
@@ -45,8 +45,8 @@ class plot_data:
         self.ui.gas_sensor_graph.setAxisItems(axisItems={'bottom': TimeAxisItem(orientation='bottom')})    # axis x축 시간값으로 출력
         self.ui.temp_sensor_graph.setMouseEnabled(x=False, y=False)                                         # mouse grab disable
         self.ui.gas_sensor_graph.setMouseEnabled(x=False, y=False)                                         # mouse grab disable
-        self.ui.temp_sensor_graph.setBackground('w')                                                        # 배경 색 변경
-        self.ui.gas_sensor_graph.setBackground('w')                                                     # 배경 색 변경
+        self.ui.temp_sensor_graph.setBackground((0, 0, 0, 0))
+        self.ui.gas_sensor_graph.setBackground((0, 0, 0, 0))                                                # 배경 색 변경
         self.ui.temp_sensor_graph.setTitle(self.ui.sensor_floor_comboBox.currentText() + ' - ' + self.ui.temp_sensor_combobox.currentText() + ' T_Sensor')
         self.ui.gas_sensor_graph.setTitle(self.ui.sensor_floor_comboBox.currentText() + ' - ' + self.ui.gas_sensor_combobox.currentText() + ' G_Sensor')
         self.ui.temp_sensor_graph.getAxis('left').setStyle(autoExpandTextSpace=False, textFillLimits=[(0, 0.7)])
