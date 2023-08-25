@@ -88,7 +88,7 @@ class eva_draw:
             # Escape Node
             'room00': [-0.61, -0.3125],
             'room01': [0.21, 0.20],
-            'room02': [-0.1665, -0.3325],
+            'door': [-0.1665, -0.3325],
 
             # hallway
             'hallway00': [-0.263, 0.546],
@@ -338,6 +338,12 @@ class eva_draw:
                                             self.node_point[self.path_route[idx + 1]][0], self.node_point[self.path_route[idx + 1]][1], height_point,
                                             Thickness, size)
 
+                    elif 'door' in self.path_route[idx]:
+                        height_point = 0.0
+                        self.draw_Arrow(self.node_point[self.path_route[idx]][0], self.node_point[self.path_route[idx]][1], height_point,
+                                        self.node_point[self.path_route[idx + 1]][0], self.node_point[self.path_route[idx + 1]][1], height_point,
+                                        Thickness, size)
+
     def draw_Danger_Floor_3D(self):
         # wy_node = ['room00', 'room01', 'room02', 'hallway00', 'hallway01', 'escape00', 'stair0']
         # glColor(self.allow_color[0], self.allow_color[1], self.allow_color[2], self.allow_color[3])
@@ -422,6 +428,12 @@ class eva_draw:
                                                 self.node_point[self.path_route[idx + 1]][0], self.node_point[self.path_route[idx + 1]][1], height_point,
                                                 Thickness, size)
 
+                    elif 'door' in self.path_route[idx]:
+                        if self.Watch_floor == 0:
+                            height_point = 0.0
+                            self.draw_Arrow(self.node_point[self.path_route[idx]][0], self.node_point[self.path_route[idx]][1], height_point,
+                                            self.node_point[self.path_route[idx + 1]][0], self.node_point[self.path_route[idx + 1]][1], height_point,
+                                            Thickness, size)
 
     def draw_Danger_Floor_2D(self):
         Fire = False
@@ -478,6 +490,13 @@ class eva_draw:
                                     self.draw_Arrow(self.node_point[start_node][0], self.node_point[center_node][1], 0.0,
                                                     self.node_point[start_node][0], self.node_point[start_node][1], 0.0,
                                                     Thickness, size)
+
+                    elif 'door' in self.path_route[idx]:
+                        if self.Watch_floor == 0:
+                            height_point = 0.0
+                            self.draw_Arrow(self.node_point[self.path_route[idx]][0], self.node_point[self.path_route[idx]][1], height_point,
+                                            self.node_point[self.path_route[idx + 1]][0], self.node_point[self.path_route[idx + 1]][1], height_point,
+                                            Thickness, size)
 
     def color(self):
             self.human_color = [0.5, 0.0, 0.0, 1.0]

@@ -758,7 +758,7 @@ class db_thread(QThread):
 
         time.sleep(1)
 
-        create_danger_level = "CREATE TABLE IF NOT EXISTS danger_level(time SMALLINT(3) NOT NULL, `101` FLOAT default 0.0, `102` FLOAT default 0.0, `1-1` FLOAT default 0.0, `1-2` FLOAT default 0.0, " \
+        create_danger_level = "CREATE TABLE IF NOT EXISTS danger_level(time SMALLINT(3) NOT NULL, `101` FLOAT default 0.0, `102` FLOAT default 0.0, `1-1` FLOAT default 0.0, `1-2` FLOAT default 0.0, `1-3` FLOAT default 0.0, " \
                               "`201` FLOAT default 0.0, `202` FLOAT default 0.0, `203` FLOAT default 0.0, `204` FLOAT default 0.0, `205` FLOAT default 0.0, `206` FLOAT default 0.0, `207` FLOAT default 0.0, " \
                               "`2-1` FLOAT default 0.0, `2-2` FLOAT default 0.0, `2-3` FLOAT default 0.0, `2-4` FLOAT default 0.0, " \
                               "`301` FLOAT default 0.0, `302` FLOAT default 0.0, `303` FLOAT default 0.0, `304` FLOAT default 0.0, `305` FLOAT default 0.0, `306` FLOAT default 0.0, `307` FLOAT default 0.0, " \
@@ -784,8 +784,19 @@ class db_thread(QThread):
         except Exception as e:
             print("err create_exit_route: ", e)
 
+        truccate_danger_level_sql = 'TRUNCATE TABLE danger_level;'
+        truccate_exit_rout_sql = 'TRUNCATE TABLE exit_route;'
+        try:
+            self.cur.execute(truccate_danger_level_sql)
+        except Exception as e:
+            print("err truccate_danger_level_sql: ", e)
+        try:
+            self.cur.execute(truccate_exit_rout_sql)
+        except Exception as e:
+            print("err truccate_exit_rout_sql: ", e)
+
         danger_level_value = ""
-        for _ in range(48):
+        for _ in range(49):
             danger_level_value += "0.0, "
         danger_level_value = danger_level_value[:-2]
 
@@ -881,9 +892,11 @@ class db_thread(QThread):
                 frame_datas = [result[1:12], result[12:61], result[61:110], result[110:159],result[159:208], result[208:210]]
                 print(frame_datas)
                 total_datas.append([time.time()] + frame_datas)
+
                 if len(total_datas) > 10:
                     if self.working:
                         self.data_sig.emit(total_datas)
+
 
             self.working = False
             self.end_sig.emit(True)
@@ -909,7 +922,8 @@ class get_data:
         self.PW = None
         self.DB_Name = None
 
-        self.last_exit_rout = {}
+        self.last_exit_rout = []
+        self.last_danger_level = []
 
         self.func_init()
         self.var_init()
@@ -930,21 +944,18 @@ class get_data:
         self.kafka_worker.start()
         self.set_Parameters()
 
+
     def resizeWidget(self):
         self.bg.resizeWidget(self.ui.openGLWidget.geometry())
         width = self.ui.log_tabWidget.geometry().width() - 6
         height = self.ui.log_tabWidget.geometry().height() - 25
-        self.ui.system_log_table.setGeometry(QRect((width / 3.0) * 0.0, 0, width / 3.0 - 1, height))
-        self.ui.analysis_log_table.setGeometry(QRect((width / 3.0) * 1.0, 0, width / 3.0 - 1, height))
-        self.ui.react_log_table.setGeometry(QRect((width / 3.0) * 2.0, 0, width / 3.0 - 1, height))
+        self.ui.system_log_table.setGeometry(QRect((width / 2.0) * 0.0, 0, width / 2.0 - 1, height))
+        self.ui.analysis_log_table.setGeometry(QRect((width / 2.0) * 1.0, 0, width / 2.0 - 1, height))
+        # self.ui.react_log_table.setGeometry(QRect((width / 2.0) * 2.0, 0, width / 2.0 - 1, height))
         self.ui.temp_data_log_table.setGeometry(QRect(0, 0, width, height))
         self.ui.gas_data_log_table.setGeometry(QRect(0, 0, width, height))
 
-    def event_init(self):
-        self.db_worker.data_sig.connect(self.data_analy)
-        self.db_worker.end_sig.connect(self.thread_end)
-
-    def set_Parameters(self):
+    def set_default_param(self):
         self.IP = self.ui.IP_Edit.text()
         self.Port = self.ui.PORT_Edit.text()
         self.ID = self.ui.ID_Edit.text()
@@ -956,20 +967,36 @@ class get_data:
         self.db_worker.PW = self.PW
         self.db_worker.DB_Name = self.DB_Name
 
-        for floor in range(5):
-            if floor == 0:
-                for room in range(2):
-                    self.last_exit_rout[str(floor + 1) + '0' + str(room + 1)] = 0
-            else:
-                for room in range(7):
-                    self.last_exit_rout[str(floor + 1) + '0' + str(room + 1)] = 0
+        self.last_danger_level = []
+        self.last_exit_rout = []
+        for _ in range(61):
+            default_danger_level = [[], [], [], [], []]
+            default_exit_route = {}
+            for floor in range(5):
+                if floor == 0:
+                    for room in range(2):
+                        default_exit_route[str(floor + 1) + '0' + str(room + 1)] = 0
+                    for node in range(5):
+                        default_danger_level[floor].append(0.0)
+
+                else:
+                    for room in range(7):
+                        default_exit_route[str(floor + 1) + '0' + str(room + 1)] = 0
+                    for node in range(11):
+                        default_danger_level[floor].append(0.0)
+            self.last_danger_level.append(default_danger_level)
+            self.last_exit_rout.append(default_exit_route)
+
+    def event_init(self):
+        self.db_worker.data_sig.connect(self.data_analy)
+        self.db_worker.end_sig.connect(self.thread_end)
 
     def worker_start(self):
         if self.db_worker.isRunning():
             self.db_worker.working = False
-            self.db_worker.stop()
+            # self.db_worker.stop()
         else:
-            self.set_Parameters()
+            self.set_default_param()
             self.db_worker.working = True
             self.db_worker.start()
             self.thread_event_set_ui()
@@ -998,123 +1025,318 @@ class get_data:
             total_gas_datas.append([data[0]] + gas_datas)
         return total_temp_datas, total_gas_datas
 
-    def update_danger_level_DB(self):
-        a = 0
+    def update_danger_level_DB(self, time, danger_level):
+        danger_level_sql = 'UPDATE danger_level SET '
+        for floor, floor_danger_level in enumerate(danger_level):
+            floor += 1
+            for node, node_danger_level in enumerate(floor_danger_level):
+                node += 1
+                if floor == 1:
+                    if node <= 2:
+                        danger_level_sql += ('`' + str(floor) + '0' + str(node) + '` = ' + "{:.1f}".format(
+                            node_danger_level) + ', ')
+                    else:
+                        danger_level_sql += ('`' + str(floor) + '-' + str(node - 2) + '` = ' + "{:.1f}".format(
+                            node_danger_level) + ', ')
+                else:
+                    if node <= 7:
+                        danger_level_sql += ('`' + str(floor) + '0' + str(node) + '` = ' + "{:.1f}".format(
+                            node_danger_level) + ', ')
+                    else:
+                        danger_level_sql += ('`' + str(floor) + '-' + str(node - 7) + '` = ' + "{:.1f}".format(
+                            node_danger_level) + ', ')
+
+        danger_level_sql = danger_level_sql[:-2] + ' WHERE time = ' + str(time) + ';'
+        try:
+            with pymysql.connect(host=self.IP, port=int(self.Port), user=self.ID, password=self.PW, db=self.DB_Name,
+                                 charset='utf8', autocommit=True, read_timeout=5, write_timeout=5,
+                                 connect_timeout=5) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(danger_level_sql)
+        except Exception as e:
+            print(e)
 
     def update_exit_rout_DB(self, time, exit_routes):
-        exit_rout_sql = 'UPDATE exit_route SET '
+        exit_route_sql = 'UPDATE exit_route SET '
         for room in exit_routes.keys():
-            exit_rout_sql += ('`' + room + '` = ' + str(exit_routes[room]) + ', ')
-        exit_rout_sql = exit_rout_sql[:-2] + ' WHERE time = ' + str(time) + ';'
+            exit_route_sql += ('`' + room + '` = ' + str(exit_routes[room]) + ', ')
+        exit_route_sql = exit_route_sql[:-2] + ' WHERE time = ' + str(time) + ';'
 
         try:
             with pymysql.connect(host=self.IP, port=int(self.Port), user=self.ID, password=self.PW, db=self.DB_Name,
                                  charset='utf8', autocommit=True, read_timeout=5, write_timeout=5,
                                  connect_timeout=5) as conn:
                 with conn.cursor() as cur:
-                    cur.execute(exit_rout_sql)
+                    cur.execute(exit_route_sql)
         except Exception as e:
             print(e)
 
-    def data_analy(self, total_datas):
+    def check_danger_level_changed(self, last_data, new_data):
+        output = False
+        for last_floor_data, new_floor_data in zip(last_data, new_data):
+            for last_value, new_value in zip(last_floor_data, new_floor_data):
+                if last_value != new_value:
+                    output = True
+        return output
 
-        temp_datas, gas_datas = self.split_datas_sensor_type(self.db_worker.head, total_datas)
+    def check_exit_route_changed(self, last_data, new_data):
+        output = False
 
-        Fire_status, temp_idx, gas_idx = self.ad.check_danger(temp_datas, gas_datas)
+        for key in new_data.keys():
+            if last_data[key] != new_data[key]:
+                output = True
 
-        for floor, last, new in zip(range(5), self.bg.eva_draw.Fire, Fire_status):
-            if (not last) and (new):
-                if (floor >= 1) and (floor <= 4):
-                    self.bg.scenario_data[floor - 1]['time'] = time.time()
-        self.bg.eva_draw.Fire = Fire_status
+        return output
 
-        self.wc.set_node_weight(temp_idx, gas_idx, self.db_worker.temp_index,
-                                self.db_worker.gas_index)
+    def check_scenario_changed(self, last_data, new_data):
+        output = False
 
+        for floor, (last_index, new_index) in enumerate(zip(last_data, new_data)):
+            if last_index != new_index:
+                self.bg.scenario_data[floor]['index'] = new_data[floor]
+                self.bg.load_scenario(floor)
+                output = True
+
+        return output
+
+    def search_all_eixt_route(self, weight, watching=None):
         exit_routs = {}
         for floor in range(5):
             if floor == 0:
                 for room in range(2):
                     start_node = 'room' + str(floor) + str(room)
-                    path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
+                    path_route = self.bg.eva_draw.rs.search(weight, start_node)
                     if path_route[-1] == 'escape00':
                         exit_routs[str(floor + 1) + '0' + str(room + 1)] = 0
                     elif path_route[-1] == 'escape01':
                         exit_routs[str(floor + 1) + '0' + str(room + 1)] = 1
+
+                    if watching != None:
+                        if start_node == watching:
+                            self.bg.eva_draw.path_route = path_route
             else:
                 for room in range(7):
                     start_node = 'room' + str(floor) + str(room)
-                    path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
+                    path_route = self.bg.eva_draw.rs.search(weight, start_node)
                     if path_route[-1] == 'escape00':
                         exit_routs[str(floor + 1) + '0' + str(room + 1)] = 0
                     elif path_route[-1] == 'escape01':
                         exit_routs[str(floor + 1) + '0' + str(room + 1)] = 1
 
-        exit_rout_change = False
-        for key in exit_routs.keys():
-            if self.last_exit_rout[key] != exit_routs[key]:
-                exit_rout_change = True
-                break
-        if exit_rout_change:
-            self.update_exit_rout_DB(0, exit_routs)
+                    if watching != None:
+                        if start_node == watching:
+                            self.bg.eva_draw.path_route = path_route
+        return exit_routs
 
+    def data_analy(self, total_datas):
+
+        # region get data
+        temp_datas, gas_datas = self.split_datas_sensor_type(self.db_worker.head, total_datas)
+        # endregion
+
+        # region check Fire
+        Fire_status, temp_idx, gas_idx = self.ad.check_danger(temp_datas, gas_datas)
+
+        for floor, last, new in zip(range(5), self.bg.eva_draw.Fire, Fire_status):
+            if (not last) and (new):
+                if (floor >= 1) and (floor <= 4):
+                    self.bg.scenario_data[floor - 1]['start_time'] = int(time.time())
+                    min_time = time.time()
+                    for dif_floor in range(4):
+                        if (floor - 1) != dif_floor:
+                            if self.bg.scenario_data[dif_floor]['start_time'] is not None:
+                                if (self.bg.scenario_data[dif_floor]['start_time'] - min_time) <= 0:
+                                    min_time = self.bg.scenario_data[dif_floor]['start_time']
+                    for dif_floor in range(4):
+                        if self.bg.scenario_data[dif_floor]['start_time'] is not None:
+                            self.bg.scenario_data[dif_floor]['diff'] = int(
+                                int(self.bg.scenario_data[dif_floor]['start_time'] - min_time) / 60.0)
+        self.bg.eva_draw.Fire = Fire_status
+        # endregion
+
+        watching_node = None
+        if self.bg.Watch_Present:
+            watching_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
+
+        # region real time DB Update
+        real_time = 0
         danger_level = []
         for floor in range(6):
-            danger_level.append(self.bg.set_danger_level(floor, self.db_worker.head[floor], total_datas[-1][floor + 1]))
+            danger_level.append(
+                self.bg.set_danger_level_Sensor(floor, self.db_worker.head[floor], total_datas[-1][floor + 1],
+                                                self.bg.Watch_Present))
+
+        danger_level_change = self.check_danger_level_changed(self.last_danger_level[real_time], danger_level)
+
+        if danger_level_change:
+            self.last_danger_level[real_time] = danger_level
+            self.update_danger_level_DB(real_time, danger_level)
+
+        self.wc.set_node_weight_useSensor(temp_idx, gas_idx, self.db_worker.temp_index, self.db_worker.gas_index)
+        exit_routs = self.search_all_eixt_route(self.wc.node, watching_node)
+
+        exit_rout_change = self.check_exit_route_changed(self.last_exit_rout[real_time], exit_routs)
+        if exit_rout_change:
+            self.last_exit_rout[real_time] = exit_routs
+            self.update_exit_rout_DB(real_time, exit_routs)
+
+        # endregion
 
         if True in self.bg.eva_draw.Fire:
-            if self.bg.Watch_Mode == 0:
-                for floor in range(6):
-                    if floor == self.bg.eva_draw.Start_floor:
-                        self.bg.gl_draw.Transparency[floor] = 1.0
-                    elif floor <= self.bg.eva_draw.Start_floor:
-                        self.bg.gl_draw.Transparency[floor] = 0.1
-                    else:
-                        self.bg.gl_draw.Transparency[floor] = 0.0
-
             scenario_idx = self.ad.check_scenario(self.bg.eva_draw.Fire, temp_datas, gas_datas)
+            change_scenario = self.check_scenario_changed([floor_data['index'] for floor_data in self.bg.scenario_data],
+                                                          scenario_idx)
 
-            change_scenario = False
-            for floor, danger in enumerate(self.bg.eva_draw.Fire):
-                if danger and (floor != 0):
-                    floor -= 1
-                    if self.bg.scenario_data[floor]['index'] != scenario_idx[floor]:
-                        change_scenario = True
-                        self.bg.scenario_data[floor]['index'] = scenario_idx[floor]
-                        self.bg.load_scenario(floor)
+            # region future DB Update
 
             if change_scenario:
-                a = 0
+                floor_idx = [[0, 47], [47, 94], [94, 141], [141, 188]]
+                for minute in range(1, 61):
+                    layer_height_data = [3.0 for _ in range(188)]
 
-        else:
-            for floor in range(6):
-                self.bg.gl_draw.Transparency[floor] = 1.0
+                    danger_level = []
+                    set = False
+                    if not self.bg.Watch_Present:
+                        if minute == self.bg.time_gap:
+                            set = True
+                    for floor in range(5):
+                        if floor == 0:
+                            danger_level.append(self.bg.set_danger_level_Layerheight(floor, [], set))
+                        else:
+                            floor -= 1
+                            data = []
+                            if self.bg.scenario_data[floor]['index'] != -1:
+                                search_time = minute + self.bg.scenario_data[floor]['diff']
+                                if search_time >= 60:
+                                    search_time = 60
+                                data = self.bg.scenario_data[floor]['data'][str(search_time)]
+                                layer_height_data[floor_idx[floor][0]:floor_idx[floor][1]] = data
+                            else:
+                                data = []
 
-        if True in self.bg.eva_draw.Fire:
-            # for i in range(len(scenario_idx)):
-            #     if self.bg.scenario_idx[i] != scenario_idx[i]:
-            #         self.bg.scenario_idx[i] = scenario_idx[i]
-            #         self.bg.load_scenario(i)
+                            danger_level.append(self.bg.set_danger_level_Layerheight(floor + 1, data, set))
 
-            if self.bg.Watch_Present:
-                for floor in range(6):
-                    self.bg.set_danger_level(floor, self.db_worker.head[floor], total_datas[-1][floor + 1])
+                    self.update_danger_level_DB(minute, danger_level)
 
-                self.wc.set_node_weight(self.ad.temp_Fire_idx, self.ad.gas_Fire_idx, self.db_worker.temp_index,
-                                        self.db_worker.gas_index)
-                start_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
+                    self.wc.set_node_weight_useLayerheight(layer_height_data)
 
-                self.bg.eva_draw.path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
+                    exit_routs = {}
+                    for floor in range(5):
+                        if floor == 0:
+                            for room in range(2):
+                                start_node = 'room' + str(floor) + str(room)
+                                path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
+                                if path_route[-1] == 'escape00':
+                                    exit_routs[str(floor + 1) + '0' + str(room + 1)] = 0
+                                elif path_route[-1] == 'escape01':
+                                    exit_routs[str(floor + 1) + '0' + str(room + 1)] = 1
 
-                path_output = 'path : '
-                for point in self.bg.eva_draw.path_route:
-                    path_output += point + ' -> '
-                self.react_log(path_output[:-3])
+                                if not self.bg.Watch_Present:
+                                    if minute == self.bg.time_gap:
+                                        if start_node == 'room' + str(self.bg.eva_draw.Start_floor) + str(
+                                                self.bg.eva_draw.Start_room):
+                                            self.bg.eva_draw.path_route = path_route
+                        else:
+                            for room in range(7):
+                                start_node = 'room' + str(floor) + str(room)
+                                path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
+                                if path_route[-1] == 'escape00':
+                                    exit_routs[str(floor + 1) + '0' + str(room + 1)] = 0
+                                elif path_route[-1] == 'escape01':
+                                    exit_routs[str(floor + 1) + '0' + str(room + 1)] = 1
+
+                                if not self.bg.Watch_Present:
+                                    if minute == self.bg.time_gap:
+                                        if start_node == 'room' + str(self.bg.eva_draw.Start_floor) + str(
+                                                self.bg.eva_draw.Start_room):
+                                            self.bg.eva_draw.path_route = path_route
+
+            else:
+                floor_idx = [[0, 47], [47, 94], [94, 141], [141, 188]]
+                minute = self.bg.time_gap
+                layer_height_data = [3.0 for _ in range(188)]
+
+                danger_level = []
+                set = False
+                if not self.bg.Watch_Present:
+                    if minute == self.bg.time_gap:
+                        set = True
+                for floor in range(5):
+                    if floor == 0:
+                        danger_level.append(self.bg.set_danger_level_Layerheight(floor, [], set))
+                    else:
+                        floor -= 1
+                        data = []
+                        if self.bg.scenario_data[floor]['index'] != -1:
+                            search_time = minute + self.bg.scenario_data[floor]['diff']
+                            if search_time >= 60:
+                                search_time = 60
+                            if search_time == 0:
+                                print(minute, self.bg.scenario_data[floor]['diff'])
+                            data = self.bg.scenario_data[floor]['data'][str(search_time)]
+                            layer_height_data[floor_idx[floor][0]:floor_idx[floor][1]] = data
+                        else:
+                            data = []
+
+                        danger_level.append(self.bg.set_danger_level_Layerheight(floor + 1, data, set))
+
+                self.update_danger_level_DB(minute, danger_level)
+
+                self.wc.set_node_weight_useLayerheight(layer_height_data)
+
+                exit_routs = {}
+                for floor in range(5):
+                    if floor == 0:
+                        for room in range(2):
+                            start_node = 'room' + str(floor) + str(room)
+                            path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
+                            if path_route[-1] == 'escape00':
+                                exit_routs[str(floor + 1) + '0' + str(room + 1)] = 0
+                            elif path_route[-1] == 'escape01':
+                                exit_routs[str(floor + 1) + '0' + str(room + 1)] = 1
+
+                            if not self.bg.Watch_Present:
+                                if minute == self.bg.time_gap:
+                                    if start_node == 'room' + str(self.bg.eva_draw.Start_floor) + str(
+                                            self.bg.eva_draw.Start_room):
+                                        self.bg.eva_draw.path_route = path_route
+                    else:
+                        for room in range(7):
+                            start_node = 'room' + str(floor) + str(room)
+                            path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
+                            if path_route[-1] == 'escape00':
+                                exit_routs[str(floor + 1) + '0' + str(room + 1)] = 0
+                            elif path_route[-1] == 'escape01':
+                                exit_routs[str(floor + 1) + '0' + str(room + 1)] = 1
+
+                            if not self.bg.Watch_Present:
+                                if minute == self.bg.time_gap:
+                                    if start_node == 'room' + str(self.bg.eva_draw.Start_floor) + str(
+                                            self.bg.eva_draw.Start_room):
+                                        self.bg.eva_draw.path_route = path_route
+
+            # endregion
+
 
         else:
             self.bg.eva_draw.Fire = [False for _ in range(5)]
             self.bg.gl_draw.show_route = False
             self.bg.eva_draw.path_route = None
+
+        if self.bg.Watch_Mode == 0:
+            if True in self.bg.eva_draw.Fire:
+                if self.ui.WatchMode_Highlight.isChecked():
+                    for floor in range(6):
+                        if floor == self.bg.eva_draw.Start_floor:
+                            self.bg.gl_draw.Transparency[floor] = 1.0
+                        else:
+                            self.bg.gl_draw.Transparency[floor] = 0.1
+                else:
+                    for floor in range(6):
+                        self.bg.gl_draw.Transparency[floor] = 1.0
+            else:
+                for floor in range(6):
+                    self.bg.gl_draw.Transparency[floor] = 1.0
 
         self.pd.data_plot(temp_datas, gas_datas)
         self.data_log(temp_datas[-1], gas_datas[-1])
@@ -1123,14 +1345,17 @@ class get_data:
         if self.ui.WatchMode0.isChecked():
             self.bg.Watch_Mode = 0
             self.ui.WatchFloor_comboBox.setEnabled(False)
-            if self.ui.WatchMode_Highlight.isChecked():
-                for floor in range(6):
-                    if floor == self.bg.eva_draw.Start_floor:
+
+            if True in self.bg.eva_draw.Fire:
+                if self.ui.WatchMode_Highlight.isChecked():
+                    for floor in range(6):
+                        if floor == self.bg.eva_draw.Start_floor:
+                            self.bg.gl_draw.Transparency[floor] = 1.0
+                        else:
+                            self.bg.gl_draw.Transparency[floor] = 0.1
+                else:
+                    for floor in range(6):
                         self.bg.gl_draw.Transparency[floor] = 1.0
-                    elif floor <= self.bg.eva_draw.Start_floor:
-                        self.bg.gl_draw.Transparency[floor] = 0.1
-                    else:
-                        self.bg.gl_draw.Transparency[floor] = 0.0
             else:
                 for floor in range(6):
                     self.bg.gl_draw.Transparency[floor] = 1.0
@@ -1167,86 +1392,13 @@ class get_data:
                 self.ui.StartRoom_comboBox.addItem(str(i + 1))
         self.bg.eva_draw.Start_room = 0
 
-        if not self.bg.Watch_Present:
-            if self.ui.N_min_later_combobox.currentIndex() <= 60:
-                self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex() * 60
-                time = self.bg.set_time + 1 + self.bg.time_gap
-                if time >= 3600:
-                    time = 3600
-
-                temp_idx = [[], [], [], [], [], []]
-                gas_idx = [[], [], [], [], [], []]
-
-                for floor, danger in enumerate(self.bg.eva_draw.Fire):
-                    if danger and (floor != 0):
-                        self.bg.set_danger_level(floor - 1, self.db_worker.head[floor][:-1],
-                                                 self.bg.future_data[floor - 1][time][1:])
-                        temp_count = 0
-                        gas_count = 0
-                        for type, value in zip(self.db_worker.head[floor][:-1],
-                                               self.bg.future_data[floor - 1][time][1:]):
-                            if type == 'temp':
-                                if float(value) >= 70.0:
-                                    temp_idx[floor].append(temp_count)
-                                temp_count += 1
-                            elif type == 'gas':
-                                if float(value) >= 0.15:
-                                    gas_idx[floor].append(gas_count)
-                                gas_count += 1
-
-            self.wc.set_node_weight(temp_idx, gas_idx, self.db_worker.temp_index, self.db_worker.gas_index)
-            start_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
-            self.bg.eva_draw.path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
-
-            path_output = 'path : '
-            for point in self.bg.eva_draw.path_route:
-                path_output += point + ' -> '
-            self.react_log(path_output[:-3])
-
     def change_Start_Room(self):
         if self.ui.StartRoom_comboBox.currentIndex() >= 0:
             self.bg.eva_draw.Start_room = self.ui.StartRoom_comboBox.currentIndex()
 
-        if not self.bg.Watch_Present:
-            if self.ui.N_min_later_combobox.currentIndex() <= 60:
-                self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex() * 60
-                time = self.bg.set_time + 1 + self.bg.time_gap
-                if time >= 3600:
-                    time = 3600
-
-                temp_idx = [[], [], [], [], [], []]
-                gas_idx = [[], [], [], [], [], []]
-
-                for floor, danger in enumerate(self.bg.eva_draw.Fire):
-                    if danger and (floor != 0):
-                        self.bg.set_danger_level(floor - 1, self.db_worker.head[floor][:-1],
-                                                 self.bg.future_data[floor - 1][time][1:])
-                        temp_count = 0
-                        gas_count = 0
-                        for type, value in zip(self.db_worker.head[floor][:-1],
-                                               self.bg.future_data[floor - 1][time][1:]):
-                            if type == 'temp':
-                                if float(value) >= 70.0:
-                                    temp_idx[floor].append(temp_count)
-                                temp_count += 1
-                            elif type == 'gas':
-                                if float(value) >= 0.15:
-                                    gas_idx[floor].append(gas_count)
-                                gas_count += 1
-
-            self.wc.set_node_weight(temp_idx, gas_idx, self.db_worker.temp_index, self.db_worker.gas_index)
-            start_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
-            self.bg.eva_draw.path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
-
-            path_output = 'path : '
-            for point in self.bg.eva_draw.path_route:
-                path_output += point + ' -> '
-            self.react_log(path_output[:-3])
-
     def change_Watch_Floor(self):
         self.bg.gl_draw.Watch_floor = self.ui.WatchFloor_comboBox.currentIndex()
         self.bg.eva_draw.Watch_floor = self.bg.gl_draw.Watch_floor
-
         self.bg.gl_draw.Transparency[self.bg.gl_draw.Watch_floor] = 1.0
 
     def change_N_Mode(self):
@@ -1257,52 +1409,10 @@ class get_data:
             self.ui.N_min_later_combobox.setEnabled(True)
             self.bg.Watch_Present = False
             self.ui.N_min_later_combobox.setCurrentIndex(0)
-            self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex() * 60
-            for floor, danger in enumerate(self.bg.eva_draw.Fire):
-                if danger and (floor != 0):
-                    time = self.bg.set_time + 1 + self.bg.time_gap
-                    if time >= len(self.bg.future_data[floor - 1][1:]):
-                        time = len(self.bg.future_data[floor - 1][1:]) - 1
-                    if len(self.bg.future_data[floor - 1]) != 0:
-                        self.bg.set_danger_level(floor - 1, self.db_worker.head[floor][:-1],
-                                                 self.bg.future_data[floor - 1][time][1:])
+            self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex() + 1
 
     def change_N_min(self):
-        if not self.bg.Watch_Present:
-            if self.ui.N_min_later_combobox.currentIndex() <= 60:
-                self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex() * 60
-                time = self.bg.set_time + 1 + self.bg.time_gap
-                if time >= 3600:
-                    time = 3600
-
-                temp_idx = [[], [], [], [], [], []]
-                gas_idx = [[], [], [], [], [], []]
-
-                for floor, danger in enumerate(self.bg.eva_draw.Fire):
-                    if danger and (floor != 0):
-                        self.bg.set_danger_level(floor - 1, self.db_worker.head[floor][:-1],
-                                                 self.bg.future_data[floor - 1][time][1:])
-                        temp_count = 0
-                        gas_count = 0
-                        for type, value in zip(self.db_worker.head[floor][:-1],
-                                               self.bg.future_data[floor - 1][time][1:]):
-                            if type == 'temp':
-                                if float(value) >= 70.0:
-                                    temp_idx[floor].append(temp_count)
-                                temp_count += 1
-                            elif type == 'gas':
-                                if float(value) >= 0.15:
-                                    gas_idx[floor].append(gas_count)
-                                gas_count += 1
-
-            self.wc.set_node_weight(temp_idx, gas_idx, self.db_worker.temp_index, self.db_worker.gas_index)
-            start_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
-            self.bg.eva_draw.path_route = self.bg.eva_draw.rs.search(self.wc.node, start_node)
-
-            path_output = 'path : '
-            for point in self.bg.eva_draw.path_route:
-                path_output += point + ' -> '
-            self.react_log(path_output[:-3])
+        self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex() + 1
 
     def thread_end(self, object):
         self.thread_event_set_ui()
@@ -1334,14 +1444,3 @@ class get_data:
             self.ui.gas_data_log_table.removeRow(0)
         self.ui.temp_data_log_table.scrollToBottom()
         self.ui.gas_data_log_table.scrollToBottom()
-
-    def react_log(self, log):
-
-        time_str = datetime.today().strftime('%H:%M:%S.%f')[:-3]
-
-        self.ui.react_log_table.setRowCount(self.ui.react_log_table.rowCount() + 1)
-        self.ui.react_log_table.setItem(self.ui.react_log_table.rowCount() - 1, 0, QTableWidgetItem(time_str))
-        self.ui.react_log_table.setItem(self.ui.react_log_table.rowCount() - 1, 1, QTableWidgetItem(log))
-        if self.ui.react_log_table.rowCount() > 20:
-            self.ui.react_log_table.removeRow(0)
-        self.ui.react_log_table.scrollToBottom()
