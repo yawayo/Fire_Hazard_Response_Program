@@ -32,7 +32,7 @@ class gl_draw:
         self.room_wall_color = [0.6, 0.6, 0.6, 0.8]
         self.stairs_color = []
         for _ in range(5):
-            self.stairs_color.append([0.0, 1.0, 0.0])
+            self.stairs_color.append([0.0, 1.0, 0.0, 1.0])
         self.Transparency = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
     def draw_Building(self):
@@ -294,7 +294,7 @@ class gl_draw:
                     glVertex3fv(point)
                 glEnd()
 
-        glColor(self.stairs_color[0][0], self.stairs_color[0][1], self.stairs_color[0][2], self.Transparency[0])
+        glColor(self.stairs_color[0][0], self.stairs_color[0][1], self.stairs_color[0][2], self.stairs_color[0][3])
         glBegin(GL_POLYGON)
         for point in stairs:
             glVertex3fv(point)
@@ -551,7 +551,7 @@ class gl_draw:
         for point in ev:
             glVertex3fv(point)
         glEnd()
-        glColor(self.stairs_color[floor][0], self.stairs_color[floor][1], self.stairs_color[floor][2], self.Transparency[floor])
+        glColor(self.stairs_color[floor][0], self.stairs_color[floor][1], self.stairs_color[floor][2], self.stairs_color[floor][3])
         glBegin(GL_POLYGON)
         for point in stairs:
             glVertex3fv(point)
@@ -699,7 +699,7 @@ class gl_draw:
 
     def draw_Stairs(self, z, height, num, floor):
 
-        glColor(self.stairs_color[floor][0], self.stairs_color[floor][1], self.stairs_color[floor][2], self.Transparency[floor])
+        glColor(self.stairs_color[floor][0], self.stairs_color[floor][1], self.stairs_color[floor][2], self.stairs_color[floor][3])
         start = 1.18
         end = 0.90
         space = [[-0.168, 1.31, z + (height / 2.0)],

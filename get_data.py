@@ -986,7 +986,6 @@ class get_data:
 
         self.set_default_param()
 
-
     def resizeWidget(self):
         self.bg.resizeWidget(self.ui.openGLWidget.geometry())
         width = self.ui.log_tabWidget.geometry().width() - 6
@@ -1028,6 +1027,12 @@ class get_data:
                         default_danger_level[floor].append(0.0)
             self.last_danger_level.append(default_danger_level)
             self.last_exit_rout.append(default_exit_route)
+
+        for floor in range(4):
+            self.bg.scenario_data[floor]['index'] = -1
+            self.bg.scenario_data[floor]['start_time'] = None
+            self.bg.scenario_data[floor]['diff'] = -1
+            self.bg.scenario_data[floor]['data'] = {}
 
     def event_init(self):
         self.db_worker.data_sig.connect(self.data_analy)
@@ -1296,11 +1301,6 @@ class get_data:
                 self.bg.eva_draw.Fire = [False for _ in range(5)]
                 self.bg.gl_draw.show_route = False
                 self.bg.eva_draw.path_route = None
-
-
-
-
-
 
             if self.bg.Watch_Mode == 0:
                 if True in self.bg.eva_draw.Fire:
