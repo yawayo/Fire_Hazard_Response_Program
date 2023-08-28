@@ -30,7 +30,7 @@ class kafka_thread(QThread):
         bootstrap_servers=["dev.iwaz.co.kr:9097"],
         auto_offset_reset="latest",
         enable_auto_commit=True,
-        group_id="hbrain123133311231334151a11a16235351113113513333113131",
+        group_id="hbrain123133311231334151a11a162353511133112331133312114312131",
         value_deserializer=lambda x: loads(x.decode('UTF-8')),
         consumer_timeout_ms=10000,
         security_protocol="SSL",
@@ -63,7 +63,6 @@ class kafka_thread(QThread):
             current_time = time.time()
             elapsed_time = current_time - start_time
             if int(elapsed_time) % 2 == 1:
-                #print("start")
                 sum = 0
                 if not memory_map_check:
                     for i in range(210):
@@ -76,9 +75,8 @@ class kafka_thread(QThread):
                             self.values[i] = int(30)
                         else:
                             self.values[i] = int(self.sensor_data[i][0][-1][1])
-                    self.shared_data.set_a(self.values)  # 메모리맵 체크 후 센서데이터 전송.
+                    self.shared_data.set_a(self.values)
 
-                #print("done")
                 start_time = current_time
             parsed_data = message.value
 
@@ -707,7 +705,6 @@ class kafka_thread(QThread):
             # print("Heat Value:", heat_value)
             # print("Status Value:", status_value)
 
-
 class db_thread(QThread):
     data_sig = pyqtSignal(object)
     end_sig = pyqtSignal(object)
@@ -815,14 +812,14 @@ class db_thread(QThread):
         for i in range(61):
             insert_exit_route_2 += "(" + str(i) + ", " + exit_route_value + "), "
 
-        # try:
-        #     self.cur.execute(insert_danger_level_1 + insert_danger_level_2[:-2] + ";")
-        # except Exception as e:
-        #     print("err insert_danger_level: ", e)
-        # try:
-        #     self.cur.execute(insert_exit_route_1 + insert_exit_route_2[:-2] + ";")
-        # except Exception as e:
-        #     print("err insert_exit_route: ", e)
+        try:
+            self.cur.execute(insert_danger_level_1 + insert_danger_level_2[:-2] + ";")
+        except Exception as e:
+            print("err insert_danger_level: ", e)
+        try:
+            self.cur.execute(insert_exit_route_1 + insert_exit_route_2[:-2] + ";")
+        except Exception as e:
+            print("err insert_exit_route: ", e)
 
     def connect_DB(self):
         if not self.connection:
@@ -888,7 +885,7 @@ class db_thread(QThread):
             total_datas = []
             while True:
                 time.sleep(2)
-                result = self.shared_data.get_a()  # get_리스트
+                result = self.shared_data.get_a()
                 frame_datas = [result[1:12], result[12:61], result[61:110], result[110:159],result[159:208], result[208:210]]
                 print(frame_datas)
                 total_datas.append([time.time()] + frame_datas)
@@ -942,7 +939,7 @@ class get_data:
         self.db_worker = db_thread(self.shared_data)  # 여기에 하나 더 추가 해?!
         self.kafka_worker = kafka_thread(self.shared_data)
         self.kafka_worker.start()
-        self.set_Parameters()
+        #self.set_Parameters()
 
 
     def resizeWidget(self):
