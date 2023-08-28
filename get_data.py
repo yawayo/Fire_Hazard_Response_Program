@@ -496,9 +496,11 @@ class get_data:
                             data = []
                             if floor != 0:
                                 if self.bg.scenario_data[floor - 1]['index'] != -1:
-                                    search_time = minute + self.bg.scenario_data[floor - 1]['diff']
+                                    search_time = minute - self.bg.scenario_data[floor - 1]['diff'] + 1
                                     if search_time >= 60:
                                         search_time = 60
+                                    elif search_time <= 1:
+                                        search_time = 1
                                     data = self.bg.scenario_data[floor - 1]['data'][str(search_time)]
                                     layer_height_data[floor_idx[floor - 1][0]:floor_idx[floor - 1][1]] = data
                             danger_level.append(self.bg.set_danger_level_Layerheight(floor, data, set))
@@ -508,8 +510,6 @@ class get_data:
                             self.last_danger_level[minute] = danger_level
                             self.update_danger_level_DB(minute, danger_level)
 
-                        self.update_danger_level_DB(minute, danger_level)
-
                         self.wc.set_node_weight_useLayerheight(layer_height_data)
                         exit_routs = self.search_all_eixt_route(self.wc.node, watching_node)
                         exit_rout_change = self.check_exit_route_changed(self.last_exit_rout[minute], exit_routs)
@@ -518,40 +518,25 @@ class get_data:
                             self.update_exit_rout_DB(minute, exit_routs)
 
                 else: # not change scenario
-                    layer_height_data = [3.0 for _ in range(188)]
-                    watching_node = None
-                    set = False
                     if not self.bg.Watch_Present:
-                        watching_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
+                        layer_height_data = [3.0 for _ in range(188)]
                         set = True
+                        watching_node = 'room' + str(self.bg.eva_draw.Start_floor) + str(self.bg.eva_draw.Start_room)
 
-                    danger_level = []
-                    for floor in range(5):
-                        data = []
-                        if floor != 0:
-                            if self.bg.scenario_data[floor - 1]['index'] != -1:
-                                search_time = self.bg.time_gap + self.bg.scenario_data[floor - 1]['diff']
-                                if search_time >= 60:
-                                    search_time = 60
-                                if search_time:
-                                    a = 0
-                                data = self.bg.scenario_data[floor - 1]['data'][str(search_time)]
-                                layer_height_data[floor_idx[floor - 1][0]:floor_idx[floor - 1][1]] = data
-                        danger_level.append(self.bg.set_danger_level_Layerheight(floor, data, set))
-
-                    danger_level_change = self.check_danger_level_changed(self.last_danger_level[self.bg.time_gap], danger_level)
-                    if danger_level_change:
-                        self.last_danger_level[self.bg.time_gap] = danger_level
-                        self.update_danger_level_DB(self.bg.time_gap, danger_level)
-
-                    self.update_danger_level_DB(self.bg.time_gap, danger_level)
-
-                    self.wc.set_node_weight_useLayerheight(layer_height_data)
-                    exit_routs = self.search_all_eixt_route(self.wc.node, watching_node)
-                    exit_rout_change = self.check_exit_route_changed(self.last_exit_rout[self.bg.time_gap], exit_routs)
-                    if exit_rout_change:
-                        self.last_exit_rout[self.bg.time_gap] = exit_routs
-                        self.update_exit_rout_DB(self.bg.time_gap, exit_routs)
+                        for floor in range(5):
+                            data = []
+                            if floor != 0:
+                                if self.bg.scenario_data[floor - 1]['index'] != -1:
+                                    search_time = self.bg.time_gap - self.bg.scenario_data[floor - 1]['diff'] + 1
+                                    if search_time >= 60:
+                                        search_time = 60
+                                    elif search_time <= 1:
+                                        search_time = 1
+                                    data = self.bg.scenario_data[floor - 1]['data'][str(search_time)]
+                                    layer_height_data[floor_idx[floor - 1][0]:floor_idx[floor - 1][1]] = data
+                            self.bg.set_danger_level_Layerheight(floor, data, set)
+                        self.wc.set_node_weight_useLayerheight(layer_height_data)
+                        self.search_all_eixt_route(self.wc.node, watching_node)
 
                 #endregion
 
@@ -655,10 +640,10 @@ class get_data:
             self.ui.N_min_later_combobox.setEnabled(True)
             self.bg.Watch_Present = False
             self.ui.N_min_later_combobox.setCurrentIndex(0)
-            self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex() + 1
+            self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex()
 
     def change_N_min(self):
-        self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex() + 1
+        self.bg.time_gap = self.ui.N_min_later_combobox.currentIndex()
 
     def thread_end(self, object):
         self.thread_event_set_ui()

@@ -1359,11 +1359,6 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
                    </property>
                    <item>
                     <property name="text">
-                     <string>0</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
                      <string>1</string>
                     </property>
                    </item>
