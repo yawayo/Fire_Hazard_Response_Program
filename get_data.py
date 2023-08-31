@@ -29,7 +29,7 @@ class kafka_thread(QThread):
         bootstrap_servers=["dev.iwaz.co.kr:9097"],
         auto_offset_reset="latest",
         enable_auto_commit=True,
-        group_id="hbrain500",
+        group_id="hbrain522",
         value_deserializer=lambda x: loads(x.decode('UTF-8')),
         consumer_timeout_ms=10000,
         security_protocol="SSL",
@@ -869,53 +869,19 @@ class db_thread(QThread):
         if self.connection:
 
 
-            #region DB_version
-            sql = "SELECT * FROM sensor_data;"
-
-            self.cur.execute(sql)
-            result = self.cur.fetchall()
-            self.disconnect_DB()
-
-            head = list(result[0]).copy()
-            for idx, type in enumerate(head):
-                this_floor = 0
-                for floor, floor_nodes in enumerate(self.floor_idx_list):
-                    if idx in floor_nodes:
-                        this_floor = floor
-                if type == 'temp':
-                    self.temp_index[this_floor].append(idx)
-                if type == 'gas':
-                    self.gas_index[this_floor].append(idx)
-            self.head = [head[1:12], head[12:61], head[61:110], head[110:159], head[159:208], head[208:210]]
-
-            total_datas = []
-
-            for _ in range(self.sensor_stack):
-                frame_datas = [result[1][1:12], result[1][12:61], result[1][61:110], result[1][110:159],
-                               result[1][159:208], result[1][208:210]]
-                total_datas.append([time.time()] + frame_datas)
-
-            for data in result[1:]:
-                data = list(data)
-                if self.working:
-                    frame_datas = [data[1:12], data[12:61], data[61:110], data[110:159], data[159:208], data[208:210]]
-                    total_datas.pop(0)
-                    total_datas.append([time.time()] + frame_datas)
-                    self.data_sig.emit(total_datas)
-                    time.sleep(self.speed / 1)
-                else:
-                    break
-            # endregion
-
-            # reguin kafka_version
-            # data_str = "0000 temp temp gas temp temp temp gas temp gas temp gas gas gas temp temp gas temp temp temp gas temp temp temp temp gas gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp temp temp gas gas temp temp gas temp temp gas gas temp temp temp temp gas gas temp gas temp temp temp gas gas temp temp gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp temp temp gas gas temp temp gas temp temp gas gas temp temp temp temp gas gas temp gas temp temp temp gas gas temp temp gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp temp temp gas gas temp temp gas temp temp gas gas temp temp temp temp gas gas temp temp temp temp temp gas gas temp temp gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp temp temp gas gas temp temp gas temp temp gas gas temp temp temp temp gas gas temp temp temp gas gas"
-            # head = data_str.split()
+            # #region DB_version
+            # sql = "SELECT * FROM sensor_data;"
+            #
+            # self.cur.execute(sql)
+            # result = self.cur.fetchall()
+            # self.disconnect_DB()
+            #
+            # head = list(result[0]).copy()
             # for idx, type in enumerate(head):
             #     this_floor = 0
             #     for floor, floor_nodes in enumerate(self.floor_idx_list):
             #         if idx in floor_nodes:
             #             this_floor = floor
-            #             break
             #     if type == 'temp':
             #         self.temp_index[this_floor].append(idx)
             #     if type == 'gas':
@@ -923,16 +889,64 @@ class db_thread(QThread):
             # self.head = [head[1:12], head[12:61], head[61:110], head[110:159], head[159:208], head[208:210]]
             #
             # total_datas = []
-            # while True:
-            #     time.sleep(2)
-            #     result = self.shared_data.get_a()
-            #     frame_datas = [result[1:12], result[12:61], result[61:110], result[110:159],result[159:208], result[208:210]]
+            #
+            # for _ in range(self.sensor_stack):
+            #     frame_datas = [result[1][1:12], result[1][12:61], result[1][61:110], result[1][110:159],
+            #                    result[1][159:208], result[1][208:210]]
             #     total_datas.append([time.time()] + frame_datas)
             #
-            #     if len(total_datas) > 10:
-            #         if self.working:
-            #             self.data_sig.emit(total_datas)
+            # for data in result[1:]:
+            #     data = list(data)
+            #     if self.working:
+            #         frame_datas = [data[1:12], data[12:61], data[61:110], data[110:159], data[159:208], data[208:210]]
+            #         total_datas.pop(0)
+            #         total_datas.append([time.time()] + frame_datas)
+            #         self.data_sig.emit(total_datas)
+            #         print(total_datas)
+            #         time.sleep(self.speed / 1)
+            #     else:
+            #         break
             # endregion
+
+            #region kafka_version
+            data_str = "0000 temp temp gas temp temp temp gas temp gas temp gas gas gas temp temp gas temp temp temp gas temp temp temp temp gas gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp temp temp gas gas temp temp gas temp temp gas gas temp temp temp temp gas gas temp gas temp temp temp gas gas temp temp gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp temp temp gas gas temp temp gas temp temp gas gas temp temp temp temp gas gas temp gas temp temp temp gas gas temp temp gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp temp temp gas gas temp temp gas temp temp gas gas temp temp temp temp gas gas temp temp temp temp temp gas gas temp temp gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp gas gas temp temp temp temp gas gas temp temp gas temp temp gas gas temp temp temp temp gas gas temp temp temp gas gas"
+            head = data_str.split()
+            for idx, type in enumerate(head):
+                this_floor = 0
+                for floor, floor_nodes in enumerate(self.floor_idx_list):
+                    if idx in floor_nodes:
+                        this_floor = floor
+                        break
+                if type == 'temp':
+                    self.temp_index[this_floor].append(idx)
+                if type == 'gas':
+                    self.gas_index[this_floor].append(idx)
+            self.head = [head[1:12], head[12:61], head[61:110], head[110:159], head[159:208], head[208:210]]
+
+            total_datas = []
+            while True:
+                time.sleep(2)
+                result = self.shared_data.get_a()
+                frame_datas = [result[1:12], result[12:61], result[61:110], result[110:159],result[159:208], result[208:210]]
+                total_datas.append([time.time()] + frame_datas)
+
+                converted_data = []
+                for entry in total_datas:
+                    timestamp = entry[0]
+                    values = entry[1:]
+
+                    new_values = []
+                    for value_list in values:
+                        new_values.append(tuple(str(item) for item in value_list))
+
+                    converted_entry = [timestamp] + new_values
+                    converted_data.append(converted_entry)
+
+                if len(total_datas) > 10:
+                    if self.working:
+                        self.data_sig.emit(converted_data)
+                        print(converted_data)
+            #endregion
 
 
 
@@ -980,12 +994,11 @@ class get_data:
         # if use DB
         self.db_worker = db_thread(self.shared_data)
 
-        # if use kafka
-        # self.kafka_worker = kafka_thread(self.shared_data)
-        # self.kafka_worker.start()
+        #if use kafka
+        self.kafka_worker = kafka_thread(self.shared_data)
+        self.kafka_worker.start()
 
         self.set_default_param()
-
 
     def resizeWidget(self):
         self.bg.resizeWidget(self.ui.openGLWidget.geometry())
@@ -1028,6 +1041,12 @@ class get_data:
                         default_danger_level[floor].append(0.0)
             self.last_danger_level.append(default_danger_level)
             self.last_exit_rout.append(default_exit_route)
+
+        for floor in range(4):
+            self.bg.scenario_data[floor]['index'] = -1
+            self.bg.scenario_data[floor]['start_time'] = None
+            self.bg.scenario_data[floor]['diff'] = -1
+            self.bg.scenario_data[floor]['data'] = {}
 
     def event_init(self):
         self.db_worker.data_sig.connect(self.data_analy)
@@ -1296,11 +1315,6 @@ class get_data:
                 self.bg.eva_draw.Fire = [False for _ in range(5)]
                 self.bg.gl_draw.show_route = False
                 self.bg.eva_draw.path_route = None
-
-
-
-
-
 
             if self.bg.Watch_Mode == 0:
                 if True in self.bg.eva_draw.Fire:
