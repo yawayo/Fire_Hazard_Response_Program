@@ -96,11 +96,13 @@ class scenarioMatching_thread(QThread):
         input_temp_datas = self.temp_datas.copy()
         input_gas_datas = self.gas_datas.copy()
 
+        print("\n")
         for floor, danger in enumerate(Fire):
             if floor != 0:
                 if danger:
                     floor_temp_data = [frame_data[floor + 1] for frame_data in input_temp_datas]
                     floor_gas_data = [frame_data[floor + 1] for frame_data in input_gas_datas]
+
                     """
                     remove stair sensor code here
                     """
