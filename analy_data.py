@@ -13,11 +13,14 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 torch.manual_seed(777)
 if device == 'cuda':
     torch.cuda.manual_seed_all(777)
-fire_Detect_model = resnet18()
-fire_Detect_model = nn.DataParallel(fire_Detect_model).to(device)
-
-fire_Detect_model.load_state_dict(torch.load("model/weight.pt", map_location=torch.device('cpu')))
-fire_Detect_model.eval()
+fire_Detect_model_temp = resnet18()
+fire_Detect_model_temp = nn.DataParallel(fire_Detect_model_temp).to(device)
+fire_Detect_model_temp.load_state_dict(torch.load("model/fire_Detect_model_temp.pt", map_location=torch.device('cpu')))
+fire_Detect_model_temp.eval()
+fire_Detect_model_gas = resnet18()
+fire_Detect_model_gas = nn.DataParallel(fire_Detect_model_gas).to(device)
+fire_Detect_model_gas.load_state_dict(torch.load("model/fire_Detect_model_gas.pt", map_location=torch.device('cpu')))
+fire_Detect_model_gas.eval()
 
 scenario_serach_model = resnet18()
 
@@ -56,23 +59,37 @@ class FireDetection_thread(QThread):
 
         for floor, floor_temp_datas in enumerate(total_temp_datas):
             for idx, value in enumerate(floor_temp_datas[-1]):
-                if float(value) >= 22.0:
+                if float(value) >= 70.0:
                     if not(idx in danger_temp_idx[floor]):
                         danger_temp_idx[floor].append(idx)
-            total_temp_datas_reshaped = [floor_temp_datas[idx] for idx in range(len(floor_temp_datas))]
+            total_temp_datas_reshaped = floor_temp_datas
             total_temp_datas_reshaped = list(zip(*total_temp_datas_reshaped))
             for idx, input_datas_str in enumerate(total_temp_datas_reshaped):
                 input_datas_float = [float(value) for value in input_datas_str]
                 input_data = (torch.tensor(self.rp.fit_transform(np.array([input_datas_float]))).unsqueeze(dim=0)).to(device, dtype=torch.float)
-                output = fire_Detect_model(input_data)
-                pred = output.argmax(dim=1, keepdim=True)
+                with torch.no_grad():
+                    output = fire_Detect_model_temp(input_data).data[0]
+                pred = output.argmax(dim=0, keepdim=True)
                 if pred == 1:
+                    print(input_datas_float)
                     if not(idx in danger_temp_idx[floor]):
                         danger_temp_idx[floor].append(idx)
 
         for floor, floor_gas_datas in enumerate(total_gas_datas):
             for idx, value in enumerate(floor_gas_datas[-1]):
-                if float(value) >= 0.01:
+                if float(value) >= 0.15:
+                    if not(idx in danger_gas_idx[floor]):
+                        danger_gas_idx[floor].append(idx)
+            total_gas_datas_reshaped = floor_gas_datas
+            total_gas_datas_reshaped = list(zip(*total_gas_datas_reshaped))
+            for idx, input_datas_str in enumerate(total_gas_datas_reshaped):
+                input_datas_float = [float(value) for value in input_datas_str]
+                input_data = (torch.tensor(self.rp.fit_transform(np.array([input_datas_float]))).unsqueeze(dim=0)).to(device, dtype=torch.float)
+                with torch.no_grad():
+                    output = fire_Detect_model_gas(input_data).data[0]
+                pred = output.argmax(dim=0, keepdim=True)
+                if pred == 1:
+                    print(input_datas_float)
                     if not(idx in danger_gas_idx[floor]):
                         danger_gas_idx[floor].append(idx)
 
@@ -192,7 +209,7 @@ class analy_data:
             self.scenarioMatching_worker.working = False
         else:
             self.scenarioMatching_worker.working = True
-            self.scenarioMatching_worker.start()
+            #self.scenarioMatching_worker.start()
             self.analysis_log("Start scenario search")
 
         return self.scenario_idx

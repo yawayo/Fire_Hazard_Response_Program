@@ -104,7 +104,7 @@ class build_gl(QOpenGLWidget):
                         temp_red = ((float(room[1]) - 20.0) / 100.0) if ((float(room[1]) - 20.0) <= 100) else 1.0
                     elif room[0] == 'gas':
                         gas_red = (float(room[1]) * 2) if ((float(room[1]) * 2) <= 1.0) else 1.0
-                    red_value = round(max(temp_red, gas_red) * 2.0, 1)
+                    red_value = (round(max(temp_red, gas_red) * 2.0, 1))*0.01
                     if set:
                         if red_value <= 1.0:
                             self.gl_draw.bottom_color[floor][idx] = [red_value, 1.0, 0.0, 1.0]
@@ -119,7 +119,7 @@ class build_gl(QOpenGLWidget):
                         temp_red = ((float(hallway[1]) - 20.0) / 100.0) if ((float(hallway[1]) - 20.0) <= 100) else 1.0
                     elif hallway[0] == 'gas':
                         gas_red = (float(hallway[1]) * 2) if ((float(hallway[1]) * 2) <= 1.0) else 1.0
-                    red_value = round(max(temp_red, gas_red) * 2.0, 1)
+                    red_value = (round(max(temp_red, gas_red) * 2.0, 1))*0.01
                     if set:
                         if red_value <= 1.0:
                             self.gl_draw.hallway_color[floor][idx] = [red_value, 1.0, 0.0, 1.0]
@@ -133,7 +133,7 @@ class build_gl(QOpenGLWidget):
                     temp_red = (float(stair[1]) / 100.0) if (float(stair[1]) <= 100) else 1.0
                 elif stair[0] == 'gas':
                     gas_red = (float(stair[1]) * 2) if ((float(stair[1]) * 2) <= 1.0) else 1.0
-                red_value = round(max(temp_red, gas_red) * 2.0, 1)
+                red_value = (round(max(temp_red, gas_red) * 2.0, 1))*0.01
                 if set:
                     if red_value <= 1.0:
                         self.gl_draw.stairs_color[floor] = [red_value, 1.0, 0.0, 1.0]
@@ -170,7 +170,7 @@ class build_gl(QOpenGLWidget):
 
                     temp_red = ((room_danger_level[0][1] - 20.0) / 100.0) if ((room_danger_level[0][1] - 20.0) <= 100) else 1.0
                     gas_red = (room_danger_level[1][1] * 2) if ((room_danger_level[1][1] * 2) <= 1.0) else 1.0
-                    red_value = round(max(temp_red, gas_red) * 2.0, 1)
+                    red_value = (round(max(temp_red, gas_red) * 2.0, 1))*0.01
                     if set:
                         if red_value <= 1.0:
                             self.gl_draw.bottom_color[floor][room] = [red_value, 1.0, 0.0, 1.0]
@@ -188,7 +188,7 @@ class build_gl(QOpenGLWidget):
 
                     temp_red = ((hallway_danger_level[0][1] - 20.0) / 100.0) if ((hallway_danger_level[0][1] - 20.0) <= 100) else 1.0
                     gas_red = (hallway_danger_level[1][1] * 2) if ((hallway_danger_level[1][1] * 2) <= 1.0) else 1.0
-                    red_value = round(max(temp_red, gas_red) * 2.0, 1)
+                    red_value = (round(max(temp_red, gas_red) * 2.0, 1))*0.01
                     if set:
                         if red_value <= 1.0:
                             self.gl_draw.hallway_color[floor][hallway] = [red_value, 1.0, 0.0, 1.0]
@@ -203,7 +203,7 @@ class build_gl(QOpenGLWidget):
                         temp_red = ((float(stair[1][i]) - 20.0) / 100.0) if ((float(stair[1][i]) - 20.0) <= 100) else 1.0
                     elif stair[0][i] == 'gas':
                         gas_red = (float(stair[1][i]) * 2) if ((float(stair[1][i]) * 2) <= 1.0) else 1.0
-                    red_value = round(max(temp_red, gas_red) * 2.0, 1)
+                    red_value = (round(max(temp_red, gas_red) * 2.0, 1))*0.01
                     if set:
                         if red_value <= 1.0:
                             self.gl_draw.stairs_color[floor] = [red_value, 1.0, 0.0, 1.0]
